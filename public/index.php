@@ -15,6 +15,8 @@ start_secure_session();
     <meta name="description" content="Swipe, match and play. Find Steam gamers based on the games you actually play.">
     <link rel="stylesheet" href="/style.css">
     <link rel="manifest" href="/manifest.json">
+    <link rel="icon" href="/icons/favicon-32.png" sizes="32x32" type="image/png">
+    <link rel="apple-touch-icon" href="/icons/icon-192.png">
     <meta name="theme-color" content="#171a21">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

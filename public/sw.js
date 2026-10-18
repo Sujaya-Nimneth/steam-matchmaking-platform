@@ -5,7 +5,9 @@ const STATIC_ASSETS = [
     '/app.js',
     '/sw-register.js',
     '/manifest.json',
-    '/offline.html'
+    '/offline.html',
+    '/icons/icon-192.png',
+    '/icons/icon-512.png'
 ];
 
 self.addEventListener('install', (event) => {
