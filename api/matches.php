@@ -1,50 +1,53 @@
 <?php
-// api/matches.php
-session_start();
+declare(strict_types=1);
+
+require __DIR__ . '/../config/security.php';
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../services/MatchEngine.php';
 
-header('Content-Type: application/json');
+security_headers();
+start_secure_session();
 
-if (!isset($_SESSION['steam_id'])) {
-    echo json_encode(['error' => 'Not authenticated']);
-    exit;
-}
-
-$steamId = $_SESSION['steam_id'];
+$steamId = require_auth();
 $db = DB::getConnection();
 
-// Get current user and their games
-$stmt = $db->prepare("SELECT * FROM users WHERE steam_id = ?");
+if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
+    json_response(['error' => 'Method not allowed'], 405);
+}
+
+$stmt = $db->prepare('SELECT * FROM users WHERE steam_id = ?');
 $stmt->execute([$steamId]);
 $currentUser = $stmt->fetch();
 
-$stmt = $db->prepare("SELECT app_id, playtime_forever, playtime_2weeks FROM user_games WHERE steam_id = ?");
+if (!$currentUser) {
+    json_response(['error' => 'Profile not found'], 404);
+}
+
+$stmt = $db->prepare('SELECT app_id, playtime_forever, playtime_2weeks FROM user_games WHERE steam_id = ?');
 $stmt->execute([$steamId]);
 $currentGames = $stmt->fetchAll();
 
-// Get filter params
-$filters = $_GET;
-$query = "SELECT * FROM users WHERE steam_id != ? AND setup_complete = 1 ";
+$query = 'SELECT * FROM users WHERE steam_id != ? AND setup_complete = 1 ';
 $params = [$steamId];
 
-// Avoid already swiped users
-$query .= " AND steam_id NOT IN (SELECT swiped_id FROM swipes WHERE swiper_id = ?) ";
+$query .= ' AND steam_id NOT IN (SELECT swiped_id FROM swipes WHERE swiper_id = ?) ';
 $params[] = $steamId;
 
-// Apply Filters
-if (isset($filters['no_vac']) && $filters['no_vac'] == '1') {
-    $query .= " AND is_vac_banned = 0 ";
+if (($_GET['no_vac'] ?? '') === '1') {
+    $query .= ' AND is_vac_banned = 0 ';
 }
-if (!empty($filters['country'])) {
-    $query .= " AND country = ? ";
-    $params[] = $filters['country'];
+
+$country = strtoupper(trim((string) ($_GET['country'] ?? '')));
+if ($country !== '' && preg_match('/^[A-Z]{2}$/', $country)) {
+    $query .= ' AND country = ? ';
+    $params[] = $country;
 }
-if (!empty($filters['playstyle'])) {
-    $query .= " AND playstyle = ? ";
-    $params[] = $filters['playstyle'];
+
+$playstyle = (string) ($_GET['playstyle'] ?? '');
+if ($playstyle !== '' && in_array($playstyle, ['Chill', 'Competitive', 'Tryhard', 'Toxic-Free'], true)) {
+    $query .= ' AND playstyle = ? ';
+    $params[] = $playstyle;
 }
-// more filters can be added here
 
 $stmt = $db->prepare($query);
 $stmt->execute($params);
@@ -52,32 +55,29 @@ $candidates = $stmt->fetchAll();
 
 $matches = [];
 
-foreach ($candidates as $cand) {
-    // Get candidate's games
-    $stmt = $db->prepare("SELECT app_id, playtime_forever, playtime_2weeks FROM user_games WHERE steam_id = ?");
-    $stmt->execute([$cand['steam_id']]);
-    $candGames = $stmt->fetchAll();
+foreach ($candidates as $candidate) {
+    $stmt = $db->prepare('SELECT app_id, playtime_forever, playtime_2weeks FROM user_games WHERE steam_id = ?');
+    $stmt->execute([$candidate['steam_id']]);
+    $candidateGames = $stmt->fetchAll();
 
-    $matchData = MatchEngine::calculateScore($currentUser, $cand, $currentGames, $candGames);
-    
-    // Only return if they have at least 1 shared game (score > 0)
-    if ($matchData['score'] > 0) {
-        // Strip sensitive info (like discord_handle) until match
-        $matches[] = [
-            'steam_id' => $cand['steam_id'],
-            'name' => $cand['name'],
-            'avatar' => $cand['avatar'],
-            'playstyle' => $cand['playstyle'],
-            'languages' => json_decode($cand['languages'] ?? '[]'),
-            'score' => $matchData['score'],
-            'shared_games' => $matchData['shared_games']
-        ];
+    $matchData = MatchEngine::calculateScore($currentUser, $candidate, $currentGames, $candidateGames);
+
+    if ($matchData['score'] <= 0) {
+        continue;
     }
+
+    // Discord handles stay hidden until both players like each other.
+    $matches[] = [
+        'steam_id' => $candidate['steam_id'],
+        'name' => $candidate['name'],
+        'avatar' => $candidate['avatar'],
+        'playstyle' => $candidate['playstyle'],
+        'languages' => json_decode($candidate['languages'] ?? '[]') ?: [],
+        'score' => $matchData['score'],
+        'shared_games' => $matchData['shared_games'],
+    ];
 }
 
-// Sort by highest score
-usort($matches, function($a, $b) {
-    return $b['score'] <=> $a['score'];
-});
+usort($matches, static fn (array $a, array $b) => $b['score'] <=> $a['score']);
 
-echo json_encode(['matches' => array_slice($matches, 0, 20)]); // return top 20 candidates
+json_response(['matches' => array_slice($matches, 0, 20)]);
