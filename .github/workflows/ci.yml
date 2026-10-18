@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: curl, pdo_sqlite
+          coverage: none
+
+      - name: Lint PHP
+        run: |
+          find api config db public services tests -name '*.php' -print0 \
+            | xargs -0 -n1 php -l
+
+      - name: Check JavaScript syntax
+        run: |
+          for file in public/*.js; do node --check "$file"; done
+
+      - name: Run tests
+        run: php tests/run.php
