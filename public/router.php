@@ -15,7 +15,7 @@ $uri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
 $uri = rawurldecode($uri);
 
 // Never expose dotfiles or private application directories.
-if (preg_match('#(^|/)\.#', $uri) || preg_match('#^/(config|db|services|vendor)(/|$)#i', $uri)) {
+if (preg_match('#(^|/)\.#', $uri) || preg_match('#^/(config|db|services|tests|deploy|vendor)(/|$)#i', $uri)) {
     http_response_code(404);
     header('Content-Type: text/plain; charset=utf-8');
     echo 'Not found';
