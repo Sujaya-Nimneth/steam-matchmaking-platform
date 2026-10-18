@@ -1,20 +1,17 @@
 <?php
-// api/filters.php
-session_start();
+declare(strict_types=1);
+
+require __DIR__ . '/../config/security.php';
 require __DIR__ . '/../config/db.php';
 
-header('Content-Type: application/json');
+security_headers();
 
 $db = DB::getConnection();
 
-// Get unique countries
-$stmt = $db->query("SELECT DISTINCT country FROM users WHERE country IS NOT NULL AND country != ''");
+$stmt = $db->query("SELECT DISTINCT country FROM users WHERE country IS NOT NULL AND country != '' ORDER BY country");
 $countries = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
-// Predefined playstyles
-$playstyles = ['Chill', 'Competitive', 'Tryhard', 'Toxic-Free'];
-
-echo json_encode([
+json_response([
     'countries' => $countries,
-    'playstyles' => $playstyles
+    'playstyles' => ['Chill', 'Competitive', 'Tryhard', 'Toxic-Free'],
 ]);
