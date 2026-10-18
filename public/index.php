@@ -1,5 +1,10 @@
 <?php
-session_start();
+declare(strict_types=1);
+
+require __DIR__ . '/../config/security.php';
+
+security_headers();
+start_secure_session();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -10,6 +15,8 @@ session_start();
     <link rel="stylesheet" href="/style.css">
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#171a21">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -131,13 +138,8 @@ session_start();
     </div>
 
     <?php if (isset($_SESSION['steam_id'])): ?>
-        <script src="/app.js"></script>
+        <script src="/app.js" defer></script>
     <?php endif; ?>
-    
-    <script>
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/sw.js');
-        }
-    </script>
+    <script src="/sw-register.js" defer></script>
 </body>
 </html>

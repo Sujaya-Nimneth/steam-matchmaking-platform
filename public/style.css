@@ -278,3 +278,31 @@ button:active, .btn-steam:active { transform: scale(0.96); }
 .modal-content { background: var(--bg-card); padding: 30px; border-radius: 12px; width: 100%; max-width: 400px; }
 .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
 .modal-actions button { flex: 1; }
+
+/* Toast + non-inline helpers (CSP blocks inline style attributes) */
+.stack-spinner { margin: auto; }
+.empty-state {
+    text-align: center;
+    padding-top: 50px;
+    color: var(--text-secondary);
+}
+.toast {
+    position: fixed;
+    left: 50%;
+    bottom: 24px;
+    transform: translate(-50%, 20px);
+    max-width: 90vw;
+    padding: 12px 18px;
+    border-radius: 8px;
+    background: rgba(255, 76, 76, 0.95);
+    color: #fff;
+    font-weight: 600;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    z-index: 2000;
+}
+.toast.visible {
+    opacity: 1;
+    transform: translate(-50%, 0);
+}
