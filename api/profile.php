@@ -26,6 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     require_same_origin();
+    rate_limit('profile', 20, 60);
 
     $data = json_decode(file_get_contents('php://input') ?: '', true);
 

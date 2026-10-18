@@ -101,6 +101,33 @@ function require_same_origin(): void
 }
 
 /**
+ * Throttle a session-scoped action.
+ *
+ * This is a per-session guard: it stops a runaway client or a stuck retry
+ * loop, but a determined attacker can still open new sessions. Terminating
+ * TLS proxies should apply IP based limits as well.
+ */
+function rate_limit(string $bucket, int $limit, int $windowSeconds): void
+{
+    $now = time();
+    $key = 'rate_' . $bucket;
+
+    $hits = array_values(array_filter(
+        is_array($_SESSION[$key] ?? null) ? $_SESSION[$key] : [],
+        static fn ($timestamp) => is_int($timestamp) && $timestamp > $now - $windowSeconds
+    ));
+
+    if (count($hits) >= $limit) {
+        $retryAfter = max(1, $windowSeconds - ($now - $hits[0]));
+        header('Retry-After: ' . $retryAfter);
+        json_response(['error' => 'Too many requests. Please slow down.'], 429);
+    }
+
+    $hits[] = $now;
+    $_SESSION[$key] = $hits;
+}
+
+/**
  * Require an authenticated session, returning the Steam ID.
  */
 function require_auth(): string
