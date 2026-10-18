@@ -52,18 +52,27 @@ Customize your matchmaking presence beyond just Steam stats:
     ```
 
 2.  **Configuration:**
-    *   Navigate to the `config/` directory.
-    *   Create or update the configuration file with your **Steam API Key** and base URL. You can get a Steam API key from the [Steam Community Developer page](https://steamcommunity.com/dev/apikey).
+    *   Export your **Steam API Key** (get one from the [Steam Community Developer page](https://steamcommunity.com/dev/apikey)) and the public base URL:
+        ```bash
+        export STEAM_API_KEY="your-key-here"
+        export APP_BASE_URL="http://localhost:8000"
+        ```
+    *   The application refuses to call Steam while the placeholder key is still configured.
 
 3.  **Database Initialization:**
-    *   Execute the `db/schema.sql` to generate the necessary tables (`users`, `user_games`, `swipes`, `matches`).
+    *   Create the SQLite database and tables (`users`, `user_games`, `swipes`, `matches`):
+        ```bash
+        php db/init.php
+        ```
 
 4.  **Run the Application:**
-    *   Host the project on a PHP-enabled web server (like Apache or Nginx).
-    *   Alternatively, use the PHP built-in server for local development:
+    *   The document root **must** be `public/`. The front controller (`public/router.php`) serves the SPA, streams static assets, and dispatches `/api/*.php` to the `api/` directory that sits outside the document root, so backend code is never directly reachable.
+    *   PHP built-in server for local development:
         ```bash
-        php -S localhost:8000
+        php -S localhost:8000 -t public public/router.php
         ```
+    *   For Apache/Nginx, point the document root at `public/` and rewrite all non-file requests to `router.php`.
+    *   The Steam OpenID return URL is `$APP_BASE_URL/api/auth.php`, so `APP_BASE_URL` must match the URL you open in the browser.
 
 ## 🤝 Contributing
 Contributions, issues, and feature requests are welcome! Feel free to check the issues page.
