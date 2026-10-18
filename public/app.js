@@ -295,6 +295,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const score = Math.max(0, Math.min(100, Number(match.score) || 0));
         card.querySelector('.compatibility-badge')?.style.setProperty('--score', String(score));
 
+        // Steam occasionally serves a dead avatar URL; fall back instead of
+        // leaving a broken image icon in the middle of the card.
+        const avatar = card.querySelector('.card-image-wrap img');
+        avatar?.addEventListener('error', () => {
+            if (avatar.src !== FALLBACK_AVATAR) avatar.src = FALLBACK_AVATAR;
+        }, { once: true });
+
         return card;
     };
 
