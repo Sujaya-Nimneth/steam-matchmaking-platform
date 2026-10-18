@@ -83,7 +83,7 @@ if ($mode !== null) {
     $db->beginTransaction();
 
     try {
-        $stmt = $db->prepare('INSERT OR REPLACE INTO user_games (steam_id, app_id, playtime_forever, playtime_2weeks) VALUES (?, ?, ?, ?)');
+        $stmt = $db->prepare('INSERT OR REPLACE INTO user_games (steam_id, app_id, name, playtime_forever, playtime_2weeks) VALUES (?, ?, ?, ?, ?)');
 
         foreach ($ownedGames as $game) {
             $playtimeForever = (int) ($game['playtime_forever'] ?? 0);
@@ -96,6 +96,7 @@ if ($mode !== null) {
             $stmt->execute([
                 $steamId,
                 (int) $game['appid'],
+                mb_substr((string) ($game['name'] ?? ''), 0, 200),
                 $playtimeForever,
                 (int) ($recentMap[$game['appid']] ?? 0),
             ]);
