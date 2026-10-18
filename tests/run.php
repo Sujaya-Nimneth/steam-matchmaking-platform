@@ -143,5 +143,60 @@ test('limits shared game details to three', function () use ($gamesA) {
     assert_same(2, count($result['shared_games']));
 });
 
+test('reports how many games were shared', function () use ($gamesA) {
+    $result = MatchEngine::calculateScore([], [], $gamesA, [
+        ['app_id' => 570, 'playtime_forever' => 100, 'playtime_2weeks' => 0],
+        ['app_id' => 730, 'playtime_forever' => 100, 'playtime_2weeks' => 0],
+        ['app_id' => 440, 'playtime_forever' => 100, 'playtime_2weeks' => 0],
+    ]);
+    assert_same(2, $result['shared_count']);
+});
+
+test('preserves the shared game name for the UI', function () use ($gamesA) {
+    $result = MatchEngine::calculateScore([], [], $gamesA, [
+        ['app_id' => 570, 'name' => 'Dota 2', 'playtime_forever' => 6000, 'playtime_2weeks' => 100],
+    ]);
+    assert_same('Dota 2', $result['shared_games'][0]['name']);
+});
+
+test('rewards library coverage over a larger unrelated library', function () {
+    // Two players with the same three games versus one shared game out of 100.
+    $smallA = [
+        ['app_id' => 1, 'playtime_forever' => 600, 'playtime_2weeks' => 0],
+        ['app_id' => 2, 'playtime_forever' => 600, 'playtime_2weeks' => 0],
+        ['app_id' => 3, 'playtime_forever' => 600, 'playtime_2weeks' => 0],
+    ];
+    $broadA = [
+        ['app_id' => 1, 'playtime_forever' => 600, 'playtime_2weeks' => 0],
+    ];
+
+    $tight = MatchEngine::calculateScore([], [], $smallA, $smallA, 3, 3);
+    $loose = MatchEngine::calculateScore([], [], $broadA, $broadA, 100, 100);
+
+    assert_true($tight['score'] > $loose['score'], 'a full library match should outrank one shared game');
+});
+
+test('does not award 100 for a handful of recent shared games', function () {
+    $games = [];
+    for ($i = 1; $i <= 7; $i++) {
+        $games[] = ['app_id' => $i, 'playtime_forever' => 600, 'playtime_2weeks' => 120];
+    }
+    $result = MatchEngine::calculateScore([], [], $games, $games, 7, 7);
+    assert_true($result['score'] < 100, 'seven perfect games should not be a perfect score');
+    assert_true($result['score'] >= 90, 'seven perfect games should still score very high');
+});
+
+test('adds a small bonus for a matching playstyle', function () use ($gamesA) {
+    $without = MatchEngine::calculateScore(['playstyle' => 'Chill'], ['playstyle' => 'Competitive'], $gamesA, $gamesA);
+    $with = MatchEngine::calculateScore(['playstyle' => 'Chill'], ['playstyle' => 'Chill'], $gamesA, $gamesA);
+    assert_true($with['score'] > $without['score'], 'matching playstyle should score higher');
+});
+
+test('breaks ties deterministically on identical input', function () use ($gamesA) {
+    $first = MatchEngine::calculateScore([], [], $gamesA, $gamesA);
+    $second = MatchEngine::calculateScore([], [], $gamesA, $gamesA);
+    assert_same($first, $second);
+});
+
 echo "\n{$passed} passed, {$failures} failed\n";
 exit($failures === 0 ? 0 : 1);
