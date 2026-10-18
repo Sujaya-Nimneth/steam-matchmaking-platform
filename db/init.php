@@ -19,6 +19,15 @@ if ($schema === false) {
 
 try {
     $db->exec($schema);
+
+    // Databases created before game names were stored need a forward migration.
+    $columns = $db->query('PRAGMA table_info(user_games)')->fetchAll(PDO::FETCH_COLUMN, 1);
+
+    if (!in_array('name', $columns, true)) {
+        $db->exec('ALTER TABLE user_games ADD COLUMN name TEXT');
+        echo "Migrated user_games: added name column\n";
+    }
+
     echo "Database initialized successfully.\n";
 } catch (PDOException $e) {
     fwrite(STDERR, 'Error initializing database: ' . $e->getMessage() . "\n");

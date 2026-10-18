@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS user_games (
     steam_id TEXT,
     app_id INTEGER,
+    name TEXT,
     playtime_forever INTEGER,
     playtime_2weeks INTEGER DEFAULT 0,
     PRIMARY KEY (steam_id, app_id),
@@ -40,3 +41,13 @@ CREATE TABLE IF NOT EXISTS matches (
     FOREIGN KEY (user1_id) REFERENCES users(steam_id) ON DELETE CASCADE,
     FOREIGN KEY (user2_id) REFERENCES users(steam_id) ON DELETE CASCADE
 );
+
+-- Candidate discovery joins user_games by app_id and filters on setup state.
+CREATE INDEX IF NOT EXISTS idx_user_games_app ON user_games(app_id);
+CREATE INDEX IF NOT EXISTS idx_users_discovery ON users(setup_complete, is_vac_banned, country, playstyle);
+
+-- "Has the other player already liked me?" lookups and cascade deletes.
+CREATE INDEX IF NOT EXISTS idx_swipes_swiped ON swipes(swiped_id, swiper_id, action);
+
+-- Listing confirmed matches for either side of the pair.
+CREATE INDEX IF NOT EXISTS idx_matches_user2 ON matches(user2_id);
