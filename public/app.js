@@ -253,7 +253,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    const createCard = (match) => {
+    const createCard = (match, isTopCard = false) => {
         const card = document.createElement('div');
         card.className = 'player-card';
         card.dataset.id = String(match.steam_id);
@@ -280,7 +280,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="stamp nope" aria-hidden="true">PASS</div>
             <div class="stamp like" aria-hidden="true">LIKE</div>
             <div class="card-image-wrap">
-                <img src="${escapeHtml(safeAvatar(match.avatar))}" alt="" draggable="false" loading="lazy" decoding="async" width="400" height="400">
+                <img src="${escapeHtml(safeAvatar(match.avatar))}" alt="" draggable="false" loading="eager" decoding="async" fetchpriority="high" width="400" height="400">
                 <div class="compatibility-badge">${escapeHtml(match.score)}%</div>
             </div>
             <div class="card-content">
@@ -298,6 +298,11 @@ document.addEventListener('DOMContentLoaded', () => {
         // Steam occasionally serves a dead avatar URL; fall back instead of
         // leaving a broken image icon in the middle of the card.
         const avatar = card.querySelector('.card-image-wrap img');
+        if (!isTopCard) {
+            // Only the visible card loads eagerly; the rest decode lazily.
+            avatar?.setAttribute('loading', 'lazy');
+            avatar?.removeAttribute('fetchpriority');
+        }
         avatar?.addEventListener('error', () => {
             if (avatar.src !== FALLBACK_AVATAR) avatar.src = FALLBACK_AVATAR;
         }, { once: true });
@@ -325,7 +330,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Render from the back so the first queue item is the top card.
         for (let i = matchQueue.length - 1; i >= 0; i--) {
-            cardStack.appendChild(createCard(matchQueue[i]));
+            cardStack.appendChild(createCard(matchQueue[i], i === 0));
         }
 
         updateDepth();
