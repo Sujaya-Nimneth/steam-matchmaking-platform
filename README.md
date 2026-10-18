@@ -37,11 +37,15 @@ Customize your matchmaking presence beyond just Steam stats:
 
 ```text
 ├── api/             # Core API endpoints (auth, swipes, matches, profile updates)
-├── config/          # Configuration files (API keys, database config)
-├── db/              # Database initialization and schema definitions
-├── public/          # Public-facing assets (frontend HTML/JS/CSS)
-└── services/        # Business logic (SteamAPI client, MatchEngine algorithm)
+├── config/          # Configuration, database connection and security helpers
+├── db/              # Schema definition and CLI initializer
+├── public/          # Document root: SPA, assets, service worker, router.php
+├── services/        # Business logic (SteamAPI client, MatchEngine algorithm)
+└── tests/           # Dependency-free regression suite (php tests/run.php)
 ```
+
+Only `public/` is web-accessible. `config/`, `db/` and `services/` are outside the
+document root, and `router.php` returns 404 for them even when it is used.
 
 ## ⚙️ Setup & Installation
 
@@ -73,6 +77,15 @@ Customize your matchmaking presence beyond just Steam stats:
         ```
     *   For Apache/Nginx, point the document root at `public/` and rewrite all non-file requests to `router.php`.
     *   The Steam OpenID return URL is `$APP_BASE_URL/api/auth.php`, so `APP_BASE_URL` must match the URL you open in the browser.
+
+## 🧪 Testing
+
+```bash
+php tests/run.php
+```
+
+The suite covers OpenID validation, SQLite pragmas and the matchmaking score.
+CI (`.github/workflows/ci.yml`) runs `php -l`, `node --check` and these tests.
 
 ## 🤝 Contributing
 Contributions, issues, and feature requests are welcome! Feel free to check the issues page.
