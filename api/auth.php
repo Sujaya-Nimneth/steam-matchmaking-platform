@@ -1,84 +1,124 @@
 <?php
-// api/auth.php
-session_start();
+declare(strict_types=1);
+
+require __DIR__ . '/../config/security.php';
 require __DIR__ . '/../config/db.php';
 require __DIR__ . '/../services/SteamAPI.php';
 
+security_headers();
+start_secure_session();
+
 $steamApi = new SteamAPI();
 
-if (isset($_GET['openid_mode'])) {
-    if ($_GET['openid_mode'] == 'cancel') {
-        die('User canceled authentication');
+$mode = $_GET['openid_mode'] ?? null;
+
+if (isset($_GET['logout'])) {
+    $_SESSION = [];
+    if (ini_get('session.use_cookies')) {
+        $params = session_get_cookie_params();
+        setcookie(session_name(), '', [
+            'expires' => time() - 42000,
+            'path' => $params['path'],
+            'domain' => $params['domain'],
+            'secure' => $params['secure'],
+            'httponly' => $params['httponly'],
+            'samesite' => $params['samesite'] ?? 'Lax',
+        ]);
     }
-
-    $steamId = $steamApi->validateLogin($_GET);
-    
-    if ($steamId) {
-        // Fetch User Data
-        $summary = $steamApi->getPlayerSummary($steamId);
-        $bans = $steamApi->getPlayerBans($steamId);
-        $ownedGames = $steamApi->getOwnedGames($steamId);
-        $recentGames = $steamApi->getRecentlyPlayedGames($steamId);
-
-        $db = DB::getConnection();
-
-        // Check if user exists
-        $stmt = $db->prepare("SELECT steam_id FROM users WHERE steam_id = ?");
-        $stmt->execute([$steamId]);
-        $exists = $stmt->fetch();
-
-        $isVacBanned = ($bans && $bans['VACBanned']) ? 1 : 0;
-        $name = $summary['personaname'] ?? 'Unknown';
-        $avatar = $summary['avatarfull'] ?? '';
-
-        if (!$exists) {
-            $stmt = $db->prepare("INSERT INTO users (steam_id, name, avatar, is_vac_banned) VALUES (?, ?, ?, ?)");
-            $stmt->execute([$steamId, $name, $avatar, $isVacBanned]);
-        } else {
-            $stmt = $db->prepare("UPDATE users SET name = ?, avatar = ?, is_vac_banned = ?, last_updated = CURRENT_TIMESTAMP WHERE steam_id = ?");
-            $stmt->execute([$name, $avatar, $isVacBanned, $steamId]);
-        }
-
-        // Process Games
-        $db->beginTransaction();
-        try {
-            // Build recent games map for quick lookup
-            $recentMap = [];
-            foreach ($recentGames as $rg) {
-                $recentMap[$rg['appid']] = $rg['playtime_2weeks'];
-            }
-
-            $stmt = $db->prepare("INSERT OR REPLACE INTO user_games (steam_id, app_id, playtime_forever, playtime_2weeks) VALUES (?, ?, ?, ?)");
-            foreach ($ownedGames as $game) {
-                $appId = $game['appid'];
-                $playtimeForever = $game['playtime_forever'];
-                $playtime2weeks = $recentMap[$appId] ?? 0;
-                
-                // Only store games with > 0 playtime to save DB space and relevance
-                if ($playtimeForever > 0) {
-                    $stmt->execute([$steamId, $appId, $playtimeForever, $playtime2weeks]);
-                }
-            }
-            $db->commit();
-        } catch (Exception $e) {
-            $db->rollBack();
-            die("Error saving games: " . $e->getMessage());
-        }
-
-        // Set Session
-        $_SESSION['steam_id'] = $steamId;
-        header("Location: /");
-        exit;
-    } else {
-        die("Authentication failed.");
-    }
-} else if (isset($_GET['logout'])) {
     session_destroy();
-    header("Location: /");
-    exit;
-} else {
-    // Redirect to Steam Login
-    $url = $steamApi->getLoginUrl();
-    header("Location: " . $url);
+    header('Location: /');
     exit;
 }
+
+if ($mode === 'cancel') {
+    header('Location: /?auth=cancelled');
+    exit;
+}
+
+if ($mode !== null) {
+    $steamId = $steamApi->validateLogin($_GET);
+
+    if ($steamId === null) {
+        http_response_code(401);
+        header('Content-Type: text/plain; charset=utf-8');
+        echo 'Authentication failed.';
+        exit;
+    }
+
+    $summary = $steamApi->getPlayerSummary($steamId);
+
+    if ($summary === null) {
+        http_response_code(502);
+        header('Content-Type: text/plain; charset=utf-8');
+        echo 'Could not load your Steam profile. Please try again.';
+        exit;
+    }
+
+    $bans = $steamApi->getPlayerBans($steamId);
+    $ownedGames = $steamApi->getOwnedGames($steamId);
+    $recentGames = $steamApi->getRecentlyPlayedGames($steamId);
+
+    $db = DB::getConnection();
+
+    $isVacBanned = !empty($bans['VACBanned']) ? 1 : 0;
+    $name = (string) ($summary['personaname'] ?? 'Unknown');
+    $avatar = (string) ($summary['avatarfull'] ?? '');
+
+    $stmt = $db->prepare('SELECT steam_id FROM users WHERE steam_id = ?');
+    $stmt->execute([$steamId]);
+
+    if ($stmt->fetch()) {
+        $stmt = $db->prepare('UPDATE users SET name = ?, avatar = ?, is_vac_banned = ?, last_updated = CURRENT_TIMESTAMP WHERE steam_id = ?');
+        $stmt->execute([$name, $avatar, $isVacBanned, $steamId]);
+    } else {
+        $stmt = $db->prepare('INSERT INTO users (steam_id, name, avatar, is_vac_banned) VALUES (?, ?, ?, ?)');
+        $stmt->execute([$steamId, $name, $avatar, $isVacBanned]);
+    }
+
+    $recentMap = [];
+    foreach ($recentGames as $recent) {
+        $recentMap[$recent['appid']] = $recent['playtime_2weeks'] ?? 0;
+    }
+
+    $db->beginTransaction();
+
+    try {
+        $stmt = $db->prepare('INSERT OR REPLACE INTO user_games (steam_id, app_id, playtime_forever, playtime_2weeks) VALUES (?, ?, ?, ?)');
+
+        foreach ($ownedGames as $game) {
+            $playtimeForever = (int) ($game['playtime_forever'] ?? 0);
+
+            // Games never played add noise and storage without improving matches.
+            if ($playtimeForever <= 0) {
+                continue;
+            }
+
+            $stmt->execute([
+                $steamId,
+                (int) $game['appid'],
+                $playtimeForever,
+                (int) ($recentMap[$game['appid']] ?? 0),
+            ]);
+        }
+
+        $db->commit();
+    } catch (Throwable $e) {
+        $db->rollBack();
+        error_log('Failed to sync Steam library: ' . $e->getMessage());
+        http_response_code(500);
+        header('Content-Type: text/plain; charset=utf-8');
+        echo 'Could not save your Steam library. Please try again.';
+        exit;
+    }
+
+    // Rotate the session ID so a pre-login session cannot be reused.
+    session_regenerate_id(true);
+    $_SESSION['steam_id'] = $steamId;
+    $_SESSION['authenticated_at'] = time();
+
+    header('Location: /');
+    exit;
+}
+
+header('Location: ' . $steamApi->getLoginUrl());
+exit;
