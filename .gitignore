@@ -13,6 +13,9 @@ db/*.sqlite-journal
 db/*.sqlite-wal
 db/*.sqlite-shm
 
+# Locally generated demo avatars (created by db/seed.php)
+public/avatars/
+
 # Dependencies
 vendor/
 node_modules/
