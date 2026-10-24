@@ -83,6 +83,9 @@ function start_secure_session(): void
         return;
     }
 
+    // Refuse attacker-supplied session IDs instead of adopting them.
+    ini_set('session.use_strict_mode', '1');
+
     $isHttps = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
 
     session_set_cookie_params([
@@ -160,10 +163,16 @@ function rate_limit(string $bucket, int $limit, int $windowSeconds): void
 
 /**
  * Require an authenticated session, returning the Steam ID.
+ *
+ * Sessions expire absolutely 30 days after login, so a leaked cookie has
+ * a bounded lifetime.
  */
 function require_auth(): string
 {
-    if (empty($_SESSION['steam_id'])) {
+    $authenticatedAt = (int) ($_SESSION['authenticated_at'] ?? 0);
+
+    if (empty($_SESSION['steam_id']) || $authenticatedAt === 0 || time() - $authenticatedAt > 60 * 60 * 24 * 30) {
+        $_SESSION = [];
         json_response(['error' => 'Not authenticated'], 401);
     }
 
