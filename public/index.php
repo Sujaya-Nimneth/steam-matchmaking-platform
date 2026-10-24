@@ -57,10 +57,9 @@ require __DIR__ . '/../config/bootstrap.php';
                         <div class="input-group">
                             <label for="setup-playstyle">Playstyle</label>
                             <select id="setup-playstyle">
-                                <option value="Chill">Chill / Casual</option>
-                                <option value="Competitive">Competitive / Ranked</option>
-                                <option value="Tryhard">Tryhard</option>
-                                <option value="Toxic-Free">Toxic-Free</option>
+                                <?php foreach (PLAYSTYLE_LABELS as $value => $label): ?>
+                                    <option value="<?= htmlspecialchars($value, ENT_QUOTES) ?>"><?= htmlspecialchars($label, ENT_QUOTES) ?></option>
+                                <?php endforeach; ?>
                             </select>
                         </div>
                         <div class="input-group">
@@ -147,10 +146,9 @@ require __DIR__ . '/../config/bootstrap.php';
                         <label for="filter-playstyle">Target Playstyle</label>
                         <select id="filter-playstyle">
                             <option value="">Any</option>
-                            <option value="Chill">Chill</option>
-                            <option value="Competitive">Competitive</option>
-                            <option value="Tryhard">Tryhard</option>
-                            <option value="Toxic-Free">Toxic-Free</option>
+                            <?php foreach (PLAYSTYLE_LABELS as $value => $label): ?>
+                                <option value="<?= htmlspecialchars($value, ENT_QUOTES) ?>"><?= htmlspecialchars($label, ENT_QUOTES) ?></option>
+                            <?php endforeach; ?>
                         </select>
                     </div>
                     <div class="input-group">

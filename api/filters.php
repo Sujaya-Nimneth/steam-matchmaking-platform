@@ -11,5 +11,5 @@ $countries = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
 json_response([
     'countries' => $countries,
-    'playstyles' => ['Chill', 'Competitive', 'Tryhard', 'Toxic-Free'],
+    'playstyles' => PLAYSTYLES,
 ]);

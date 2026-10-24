@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 require __DIR__ . '/security.php';
 require __DIR__ . '/db.php';
+require __DIR__ . '/domain.php';
 
 install_error_handlers();
 security_headers();

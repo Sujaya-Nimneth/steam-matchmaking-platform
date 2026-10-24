@@ -6,8 +6,6 @@ require __DIR__ . '/../config/bootstrap.php';
 $steamId = require_auth();
 $db = DB::getConnection();
 
-const PLAYSTYLES = ['Chill', 'Competitive', 'Tryhard', 'Toxic-Free'];
-
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $stmt = $db->prepare('SELECT steam_id, name, avatar, discord_handle, playstyle, languages, age, country, setup_complete FROM users WHERE steam_id = ?');
     $stmt->execute([$steamId]);

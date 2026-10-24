@@ -45,7 +45,7 @@ if ($country !== '' && preg_match('/^[A-Z]{2}$/', $country)) {
 }
 
 $playstyle = (string) ($_GET['playstyle'] ?? '');
-if ($playstyle !== '' && in_array($playstyle, ['Chill', 'Competitive', 'Tryhard', 'Toxic-Free'], true)) {
+if ($playstyle !== '' && in_array($playstyle, PLAYSTYLES, true)) {
     $filterSql .= ' AND u.playstyle = ? ';
     $filters[] = $playstyle;
 }
