@@ -33,6 +33,39 @@ if (isset($_GET['logout'])) {
     json_response(['success' => true]);
 }
 
+// Demo login for local development, the seeded demo database and the test
+// suite. It is dead code unless DEMO_MODE=1 is set explicitly; production
+// deployments must never set it.
+if (isset($_GET['demo_login'])) {
+    if (getenv('DEMO_MODE') !== '1') {
+        json_response(['error' => 'Not found'], 404);
+    }
+
+    rate_limit('login', 10, 60);
+
+    $demoId = (string) $_GET['demo_login'];
+
+    if (!preg_match('/^\d{17,25}$/', $demoId)) {
+        json_response(['error' => 'Invalid demo user'], 422);
+    }
+
+    $db = DB::getConnection();
+    $stmt = $db->prepare('SELECT steam_id FROM users WHERE steam_id = ?');
+    $stmt->execute([$demoId]);
+
+    if (!$stmt->fetch()) {
+        json_response(['error' => 'Unknown demo user'], 404);
+    }
+
+    // Same session treatment as a real OpenID login.
+    session_regenerate_id(true);
+    $_SESSION['steam_id'] = $demoId;
+    $_SESSION['authenticated_at'] = time();
+
+    header('Location: /');
+    exit;
+}
+
 if ($mode === 'cancel') {
     header('Location: /?auth=cancelled');
     exit;
