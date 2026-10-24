@@ -50,11 +50,12 @@ if ($playstyle !== '' && in_array($playstyle, PLAYSTYLES, true)) {
     $filters[] = $playstyle;
 }
 
-// One query returns every candidate that shares at least one game, together
-// with the shared rows, instead of one query per candidate.
-$sql = "
-    SELECT u.steam_id, u.name, u.avatar, u.playstyle, u.languages,
-           g.app_id, g.name AS game_name, g.playtime_forever, g.playtime_2weeks
+// Phase 1: rank every candidate that shares at least one game by overlap
+// depth and keep the top 300. The user_games self-join is the expensive part
+// of discovery, so the shared-row hydration below is bounded to a fixed set
+// of candidates instead of the entire user base.
+$candidateSql = "
+    SELECT u.steam_id
     FROM users u
     JOIN user_games g ON g.steam_id = u.steam_id
     JOIN user_games mine ON mine.app_id = g.app_id AND mine.steam_id = :me
@@ -64,34 +65,56 @@ $sql = "
           SELECT 1 FROM swipes s WHERE s.swiper_id = :me AND s.swiped_id = u.steam_id
       )
       {$filterSql}
-    ORDER BY u.steam_id
+    GROUP BY u.steam_id
+    ORDER BY COUNT(*) DESC
+    LIMIT 300
 ";
 
-$stmt = $db->prepare($sql);
+$stmt = $db->prepare($candidateSql);
 $stmt->execute(array_merge([':me' => $steamId], $filters));
+$candidateIds = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
 $candidates = [];
 $sharedByCandidate = [];
 
-while ($row = $stmt->fetch()) {
-    $candidateId = $row['steam_id'];
+if ($candidateIds !== []) {
+    // Phase 2: one query returns the bounded candidates together with all
+    // of their shared rows, instead of one query per candidate.
+    $placeholders = implode(',', array_fill(0, count($candidateIds), '?'));
 
-    if (!isset($candidates[$candidateId])) {
-        $candidates[$candidateId] = [
-            'steam_id' => $row['steam_id'],
-            'name' => $row['name'],
-            'avatar' => $row['avatar'],
-            'playstyle' => $row['playstyle'],
-            'languages' => $row['languages'],
+    $sql = "
+        SELECT u.steam_id, u.name, u.avatar, u.playstyle, u.languages,
+               g.app_id, g.name AS game_name, g.playtime_forever, g.playtime_2weeks
+        FROM users u
+        JOIN user_games g ON g.steam_id = u.steam_id
+        JOIN user_games mine ON mine.app_id = g.app_id AND mine.steam_id = :me
+        WHERE u.steam_id IN ({$placeholders})
+        ORDER BY u.steam_id
+    ";
+
+    $stmt = $db->prepare($sql);
+    $stmt->execute(array_merge([':me' => $steamId], $candidateIds));
+
+    while ($row = $stmt->fetch()) {
+        $candidateId = $row['steam_id'];
+
+        if (!isset($candidates[$candidateId])) {
+            $candidates[$candidateId] = [
+                'steam_id' => $row['steam_id'],
+                'name' => $row['name'],
+                'avatar' => $row['avatar'],
+                'playstyle' => $row['playstyle'],
+                'languages' => $row['languages'],
+            ];
+        }
+
+        $sharedByCandidate[$candidateId][] = [
+            'app_id' => (int) $row['app_id'],
+            'name' => $row['game_name'],
+            'playtime_forever' => (int) $row['playtime_forever'],
+            'playtime_2weeks' => (int) $row['playtime_2weeks'],
         ];
     }
-
-    $sharedByCandidate[$candidateId][] = [
-        'app_id' => (int) $row['app_id'],
-        'name' => $row['game_name'],
-        'playtime_forever' => (int) $row['playtime_forever'],
-        'playtime_2weeks' => (int) $row['playtime_2weeks'],
-    ];
 }
 
 $librarySizes = candidate_library_sizes($db, array_keys($candidates));
