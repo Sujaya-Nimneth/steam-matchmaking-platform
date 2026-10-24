@@ -8,8 +8,8 @@ require __DIR__ . '/../config/bootstrap.php';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Steam Friend Finder</title>
-    <meta name="description" content="Swipe, match and play. Find Steam gamers based on the games you actually play.">
+    <title>LFG — Steam Matchmaking Platform</title>
+    <meta name="description" content="Swipe, match and play. The Steam matchmaking platform finds you gaming partners based on the games you actually play.">
     <link rel="stylesheet" href="/style.css">
     <link rel="manifest" href="/manifest.json">
     <link rel="icon" href="/icons/favicon-32.png" sizes="32x32" type="image/png">
