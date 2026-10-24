@@ -271,9 +271,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }).join('');
 
         const sharedCount = Number(match.shared_count || sharedGames.length);
+        const languages = (Array.isArray(match.languages) ? match.languages : []).filter(Boolean);
         const meta = [
             `<span class="pill">${escapeHtml(match.playstyle || 'Casual')}</span>`,
-            sharedCount > 0 ? `<span class="pill">${escapeHtml(sharedCount)} shared game${sharedCount === 1 ? '' : 's'}</span>` : ''
+            sharedCount > 0 ? `<span class="pill">${escapeHtml(sharedCount)} shared game${sharedCount === 1 ? '' : 's'}</span>` : '',
+            match.country ? `<span class="pill" title="Country">${escapeHtml(match.country)}</span>` : '',
+            match.age ? `<span class="pill">${escapeHtml(match.age)} yrs</span>` : '',
+            languages.length > 0
+                ? `<span class="pill">Speaks ${escapeHtml(languages.slice(0, 3).join(', '))}${languages.length > 3 ? '…' : ''}</span>`
+                : ''
         ].join('');
 
         card.innerHTML = `
@@ -622,6 +628,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const discord = document.createElement('span');
             discord.textContent = match.discord_handle || 'No Discord handle';
             info.append(name, discord);
+
+            const langs = (Array.isArray(match.languages) ? match.languages : []).filter(Boolean);
+            if (langs.length > 0) {
+                const speaks = document.createElement('span');
+                speaks.textContent = `Speaks ${langs.join(', ')}`;
+                info.append(speaks);
+            }
 
             const link = document.createElement('a');
             link.href = match.steam_profile_url;
