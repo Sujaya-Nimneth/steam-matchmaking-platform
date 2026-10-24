@@ -112,69 +112,99 @@ class SteamAPI
         return (string) $result;
     }
 
-    private function makeApiCall(string $endpoint, array $params = []): ?array
+    /**
+     * Run several Web API GET calls concurrently. Steam serves the profile
+     * endpoints independently, so login latency drops from the sum of the
+     * calls to the slowest single one.
+     *
+     * @param array<string, array{0: string, 1: array}> $calls name => [endpoint, params]
+     * @return array<string, ?array> decoded responses, null on failure
+     */
+    private function makeApiCalls(array $calls): array
     {
         if ($this->apiKey === '' || $this->apiKey === 'YOUR_STEAM_API_KEY_HERE') {
             error_log('STEAM_API_KEY is not configured; refusing to call the Steam Web API.');
-            return null;
+            return array_fill_keys(array_keys($calls), null);
         }
 
-        $params['key'] = $this->apiKey;
-        $url = self::API_HOST . $endpoint . '?' . http_build_query($params);
+        $multi = curl_multi_init();
+        $handles = [];
 
-        $ch = curl_init($url);
-        curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_CONNECTTIMEOUT => 5,
-            CURLOPT_TIMEOUT => self::TIMEOUT_SECONDS,
-            CURLOPT_FOLLOWLOCATION => false,
-            CURLOPT_SSL_VERIFYPEER => true,
-            CURLOPT_SSL_VERIFYHOST => 2,
-        ]);
+        foreach ($calls as $name => [$endpoint, $params]) {
+            $params['key'] = $this->apiKey;
 
-        $response = curl_exec($ch);
-        $status = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
-        $error = curl_error($ch);
-        curl_close($ch);
+            $ch = curl_init(self::API_HOST . $endpoint . '?' . http_build_query($params));
+            curl_setopt_array($ch, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_CONNECTTIMEOUT => 5,
+                CURLOPT_TIMEOUT => self::TIMEOUT_SECONDS,
+                CURLOPT_FOLLOWLOCATION => false,
+                CURLOPT_SSL_VERIFYPEER => true,
+                CURLOPT_SSL_VERIFYHOST => 2,
+            ]);
 
-        if ($response === false || $status !== 200) {
-            error_log(sprintf('Steam API call failed: %s status=%d error=%s', $endpoint, $status, $error));
-            return null;
+            curl_multi_add_handle($multi, $ch);
+            $handles[$name] = [$ch, $endpoint];
         }
 
-        $decoded = json_decode((string) $response, true);
-        return is_array($decoded) ? $decoded : null;
+        do {
+            $status = curl_multi_exec($multi, $running);
+            if ($running > 0) {
+                curl_multi_select($multi, 0.2);
+            }
+        } while ($running > 0 && $status === CURLM_OK);
+
+        $results = [];
+
+        foreach ($handles as $name => [$ch, $endpoint]) {
+            $response = curl_multi_getcontent($ch);
+            $httpCode = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+            $error = curl_error($ch);
+
+            curl_multi_remove_handle($multi, $ch);
+            curl_close($ch);
+
+            if ($response === false || $response === null || $httpCode !== 200) {
+                error_log(sprintf('Steam API call failed: %s status=%d error=%s', $endpoint, $httpCode, $error));
+                $results[$name] = null;
+                continue;
+            }
+
+            $decoded = json_decode($response, true);
+            $results[$name] = is_array($decoded) ? $decoded : null;
+        }
+
+        curl_multi_close($multi);
+
+        return $results;
     }
 
-    public function getPlayerSummary(string $steamId): ?array
+    /**
+     * Profile summary, ban status, owned games and recent games in a single
+     * concurrent round trip. Failed calls come back as null / empty arrays.
+     */
+    public function getProfileBundle(string $steamId): array
     {
-        $res = $this->makeApiCall('/ISteamUser/GetPlayerSummaries/v0002/', ['steamids' => $steamId]);
-        return $res['response']['players'][0] ?? null;
-    }
-
-    public function getOwnedGames(string $steamId): array
-    {
-        $res = $this->makeApiCall('/IPlayerService/GetOwnedGames/v0001/', [
-            'steamid' => $steamId,
-            'include_appinfo' => 1,
-            'include_played_free_games' => 1,
-            'format' => 'json',
+        $results = $this->makeApiCalls([
+            'summary' => ['/ISteamUser/GetPlayerSummaries/v0002/', ['steamids' => $steamId]],
+            'bans' => ['/ISteamUser/GetPlayerBans/v1/', ['steamids' => $steamId]],
+            'owned' => ['/IPlayerService/GetOwnedGames/v0001/', [
+                'steamid' => $steamId,
+                'include_appinfo' => 1,
+                'include_played_free_games' => 1,
+                'format' => 'json',
+            ]],
+            'recent' => ['/IPlayerService/GetRecentlyPlayedGames/v0001/', [
+                'steamid' => $steamId,
+                'format' => 'json',
+            ]],
         ]);
-        return $res['response']['games'] ?? [];
-    }
 
-    public function getRecentlyPlayedGames(string $steamId): array
-    {
-        $res = $this->makeApiCall('/IPlayerService/GetRecentlyPlayedGames/v0001/', [
-            'steamid' => $steamId,
-            'format' => 'json',
-        ]);
-        return $res['response']['games'] ?? [];
-    }
-
-    public function getPlayerBans(string $steamId): ?array
-    {
-        $res = $this->makeApiCall('/ISteamUser/GetPlayerBans/v1/', ['steamids' => $steamId]);
-        return $res['players'][0] ?? null;
+        return [
+            'summary' => $results['summary']['response']['players'][0] ?? null,
+            'bans' => $results['bans']['players'][0] ?? null,
+            'owned_games' => $results['owned']['response']['games'] ?? [],
+            'recent_games' => $results['recent']['response']['games'] ?? [],
+        ];
     }
 }

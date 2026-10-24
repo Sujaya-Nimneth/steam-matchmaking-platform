@@ -49,15 +49,17 @@ if ($mode !== null) {
         json_response(['error' => 'Steam authentication failed. Please try again.'], 401);
     }
 
-    $summary = $steamApi->getPlayerSummary($steamId);
+    // Summary, bans, owned games and recent games in one concurrent round trip.
+    $bundle = $steamApi->getProfileBundle($steamId);
+    $summary = $bundle['summary'];
 
     if ($summary === null) {
         json_response(['error' => 'Could not load your Steam profile. Please try again.'], 502);
     }
 
-    $bans = $steamApi->getPlayerBans($steamId);
-    $ownedGames = $steamApi->getOwnedGames($steamId);
-    $recentGames = $steamApi->getRecentlyPlayedGames($steamId);
+    $bans = $bundle['bans'];
+    $ownedGames = $bundle['owned_games'];
+    $recentGames = $bundle['recent_games'];
 
     $db = DB::getConnection();
 
