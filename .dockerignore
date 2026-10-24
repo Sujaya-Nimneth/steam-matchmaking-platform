@@ -1,0 +1,12 @@
+.git
+.github
+.zcode
+.env
+.env.*
+db/*.sqlite
+db/*.sqlite-*
+public/avatars
+*.log
+.DS_Store
+docker-compose.yml
+Dockerfile

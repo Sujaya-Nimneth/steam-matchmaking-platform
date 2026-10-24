@@ -1,0 +1,21 @@
+# Docker Compose for the Steam Matchmaking Platform.
+#
+#   Real Steam login:   STEAM_API_KEY=xxx APP_BASE_URL=https://your-host docker compose up -d --build
+#   Local demo:         DEMO_MODE=1 docker compose up -d --build
+#                       then open http://localhost:8080/api/auth.php?demo_login=76561198000000001
+
+services:
+  lfg:
+    build: .
+    ports:
+      - "${LFG_PORT:-8080}:80"
+    environment:
+      STEAM_API_KEY: ${STEAM_API_KEY:-YOUR_STEAM_API_KEY_HERE}
+      APP_BASE_URL: ${APP_BASE_URL:-http://localhost:8080}
+      DEMO_MODE: ${DEMO_MODE:-0}
+    volumes:
+      - lfg-data:/var/www/data
+    restart: unless-stopped
+
+volumes:
+  lfg-data:
