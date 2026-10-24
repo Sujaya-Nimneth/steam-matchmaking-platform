@@ -111,6 +111,29 @@ function json_response(array $payload, int $status = 200): never
 }
 
 /**
+ * Read and decode a JSON request body, rejecting anything over $maxBytes so
+ * a client cannot stream an unbounded payload into memory.
+ *
+ * @return array<string, mixed>
+ */
+function read_json_body(int $maxBytes = 10240): array
+{
+    $raw = file_get_contents('php://input') ?: '';
+
+    if (strlen($raw) > $maxBytes) {
+        json_response(['error' => 'Request body too large'], 413);
+    }
+
+    $data = json_decode($raw, true);
+
+    if (!is_array($data)) {
+        json_response(['error' => 'Invalid JSON body'], 400);
+    }
+
+    return $data;
+}
+
+/**
  * Reject state-changing requests that do not originate from this host.
  *
  * Browsers always send Origin for cross-origin POSTs; same-origin requests

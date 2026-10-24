@@ -24,11 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     require_same_origin();
     rate_limit('profile', 20, 60);
 
-    $data = json_decode(file_get_contents('php://input') ?: '', true);
-
-    if (!is_array($data)) {
-        json_response(['error' => 'Invalid JSON body'], 400);
-    }
+    $data = read_json_body();
 
     $discord = trim((string) ($data['discord_handle'] ?? ''));
     $playstyle = (string) ($data['playstyle'] ?? '');
