@@ -161,8 +161,8 @@ class SteamAPI
             $httpCode = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
             $error = curl_error($ch);
 
-            curl_multi_remove_handle($multi, $ch);
-            curl_close($ch);
+            // curl_close()/curl_multi_close() are no-ops since PHP 8.0 and
+            // deprecated in newer PHP; handles are released on destruction.
 
             if ($response === false || $response === null || $httpCode !== 200) {
                 error_log(sprintf('Steam API call failed: %s status=%d error=%s', $endpoint, $httpCode, $error));
@@ -173,8 +173,6 @@ class SteamAPI
             $decoded = json_decode($response, true);
             $results[$name] = is_array($decoded) ? $decoded : null;
         }
-
-        curl_multi_close($multi);
 
         return $results;
     }

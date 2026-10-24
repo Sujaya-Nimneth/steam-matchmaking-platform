@@ -18,6 +18,7 @@ register_shutdown_function(static function () use ($testDb): void {
 });
 
 require $root . '/config/db.php';
+require $root . '/config/domain.php';
 require $root . '/services/SteamAPI.php';
 require $root . '/services/MatchEngine.php';
 
@@ -210,6 +211,9 @@ test('breaks ties deterministically on identical input', function () use ($games
     $second = MatchEngine::calculateScore([], [], $gamesA, $gamesA);
     assert_same($first, $second);
 });
+
+// HTTP integration suite: boots the built-in server and exercises the API.
+require __DIR__ . '/integration.php';
 
 echo "\n{$passed} passed, {$failures} failed\n";
 exit($failures === 0 ? 0 : 1);
