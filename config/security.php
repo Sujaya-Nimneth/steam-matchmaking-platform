@@ -47,6 +47,9 @@ function security_headers(): void
     }
 
     header_remove('X-Powered-By');
+    // The SPA shell and every JSON response are user-specific; shared caches
+    // and the back button must not replay them.
+    header('Cache-Control: no-store');
     header('X-Content-Type-Options: nosniff');
     header('X-Frame-Options: DENY');
     header('Referrer-Policy: strict-origin-when-cross-origin');
