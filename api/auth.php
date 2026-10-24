@@ -39,6 +39,10 @@ if ($mode === 'cancel') {
 }
 
 if ($mode !== null) {
+    // Assertion validation plus a full library sync is the most expensive
+    // write path in the app.
+    rate_limit('login', 10, 60);
+
     $steamId = $steamApi->validateLogin($_GET);
 
     if ($steamId === null) {

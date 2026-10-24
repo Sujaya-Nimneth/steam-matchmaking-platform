@@ -15,6 +15,9 @@ if (isset($_GET['list'])) {
     json_response(['matches' => list_matches($db, $steamId)]);
 }
 
+// The discovery join is the most expensive read in the app.
+rate_limit('deck', 30, 60);
+
 $stmt = $db->prepare('SELECT * FROM users WHERE steam_id = ?');
 $stmt->execute([$steamId]);
 $currentUser = $stmt->fetch();
