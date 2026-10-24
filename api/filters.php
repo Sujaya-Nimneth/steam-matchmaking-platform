@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require __DIR__ . '/../config/bootstrap.php';
 
+require_auth();
 $db = DB::getConnection();
 
 $stmt = $db->query("SELECT DISTINCT country FROM users WHERE country IS NOT NULL AND country != '' ORDER BY country");
