@@ -1,12 +1,8 @@
 <?php
 declare(strict_types=1);
 
-require __DIR__ . '/../config/security.php';
-require __DIR__ . '/../config/db.php';
+require __DIR__ . '/../config/bootstrap.php';
 require __DIR__ . '/../services/SteamAPI.php';
-
-security_headers();
-start_secure_session();
 
 $steamApi = new SteamAPI();
 

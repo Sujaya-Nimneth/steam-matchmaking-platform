@@ -7,6 +7,37 @@ declare(strict_types=1);
  */
 
 /**
+ * Install process-wide error handling. Errors are never displayed to the
+ * client, and an uncaught Throwable becomes a generic JSON 500 so internals
+ * (stack traces, SQL, paths) never leak into a response.
+ */
+function install_error_handlers(): void
+{
+    ini_set('display_errors', '0');
+    ini_set('display_startup_errors', '0');
+    error_reporting(E_ALL);
+
+    set_exception_handler(static function (Throwable $e): void {
+        error_log(sprintf(
+            'Uncaught %s: %s in %s:%d',
+            get_class($e),
+            $e->getMessage(),
+            $e->getFile(),
+            $e->getLine()
+        ));
+
+        if (!headers_sent()) {
+            http_response_code(500);
+            header('Content-Type: application/json; charset=utf-8');
+            header('Cache-Control: no-store');
+        }
+
+        echo json_encode(['error' => 'Internal server error'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        exit;
+    });
+}
+
+/**
  * Emit hardening headers. Safe to call more than once.
  */
 function security_headers(): void

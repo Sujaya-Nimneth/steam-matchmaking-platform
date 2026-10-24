@@ -1,10 +1,7 @@
 <?php
 declare(strict_types=1);
 
-require __DIR__ . '/../config/security.php';
-require __DIR__ . '/../config/db.php';
-
-security_headers();
+require __DIR__ . '/../config/bootstrap.php';
 
 $db = DB::getConnection();
 

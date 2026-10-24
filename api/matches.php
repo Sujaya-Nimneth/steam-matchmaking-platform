@@ -1,12 +1,8 @@
 <?php
 declare(strict_types=1);
 
-require __DIR__ . '/../config/security.php';
-require __DIR__ . '/../config/db.php';
+require __DIR__ . '/../config/bootstrap.php';
 require __DIR__ . '/../services/MatchEngine.php';
-
-security_headers();
-start_secure_session();
 
 $steamId = require_auth();
 $db = DB::getConnection();

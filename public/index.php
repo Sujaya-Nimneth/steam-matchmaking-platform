@@ -1,10 +1,7 @@
 <?php
 declare(strict_types=1);
 
-require __DIR__ . '/../config/security.php';
-
-security_headers();
-start_secure_session();
+require __DIR__ . '/../config/bootstrap.php';
 ?>
 <!DOCTYPE html>
 <html lang="en">

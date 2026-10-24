@@ -1,11 +1,7 @@
 <?php
 declare(strict_types=1);
 
-require __DIR__ . '/../config/security.php';
-require __DIR__ . '/../config/db.php';
-
-security_headers();
-start_secure_session();
+require __DIR__ . '/../config/bootstrap.php';
 
 $steamId = require_auth();
 $db = DB::getConnection();
