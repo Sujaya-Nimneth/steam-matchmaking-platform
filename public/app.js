@@ -43,6 +43,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (typeof url !== 'string' || url === '') return FALLBACK_AVATAR;
         try {
             const parsed = new URL(url, window.location.origin);
+            // Same-origin paths (locally served avatars) and absolute https
+            // URLs (Steam CDNs) are allowed; anything else falls back.
+            if (parsed.origin === window.location.origin) {
+                return parsed.pathname + parsed.search;
+            }
             return parsed.protocol === 'https:' ? parsed.href : FALLBACK_AVATAR;
         } catch {
             return FALLBACK_AVATAR;
@@ -664,9 +669,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const filterModal = document.getElementById('filter-modal');
     const countrySelect = document.getElementById('filter-country');
+    const languageSelect = document.getElementById('filter-language');
 
     const loadFilterOptions = async () => {
-        if (!countrySelect || countrySelect.dataset.loaded) return;
+        if ((!countrySelect || countrySelect.dataset.loaded) && (!languageSelect || languageSelect.dataset.loaded)) return;
 
         try {
             const data = await api('/api/filters.php');
@@ -674,9 +680,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 const option = document.createElement('option');
                 option.value = country;
                 option.textContent = country;
-                countrySelect.appendChild(option);
+                countrySelect?.appendChild(option);
             });
-            countrySelect.dataset.loaded = '1';
+            (data.languages || []).forEach((language) => {
+                const option = document.createElement('option');
+                option.value = language;
+                option.textContent = language;
+                languageSelect?.appendChild(option);
+            });
+            if (countrySelect) countrySelect.dataset.loaded = '1';
+            if (languageSelect) languageSelect.dataset.loaded = '1';
         } catch (error) {
             console.error('Could not load filter options', error);
         }
@@ -695,6 +708,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const filters = {
             playstyle: document.getElementById('filter-playstyle').value,
             country: countrySelect ? countrySelect.value : '',
+            language: languageSelect ? languageSelect.value : '',
             no_vac: document.getElementById('filter-novac').checked ? '1' : '0'
         };
 

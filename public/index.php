@@ -162,6 +162,12 @@ require __DIR__ . '/../config/bootstrap.php';
                             <option value="">Any</option>
                         </select>
                     </div>
+                    <div class="input-group">
+                        <label for="filter-language">Language</label>
+                        <select id="filter-language">
+                            <option value="">Any</option>
+                        </select>
+                    </div>
                     <div class="input-group check-group">
                         <input type="checkbox" id="filter-novac" value="1">
                         <label for="filter-novac">No VAC banned players</label>
