@@ -84,7 +84,7 @@ if ($mode !== null) {
     $db->beginTransaction();
 
     try {
-        $stmt = $db->prepare('INSERT OR REPLACE INTO user_games (steam_id, app_id, name, playtime_forever, playtime_2weeks) VALUES (?, ?, ?, ?, ?)');
+        $rows = [];
 
         foreach ($ownedGames as $game) {
             $playtimeForever = (int) ($game['playtime_forever'] ?? 0);
@@ -94,13 +94,23 @@ if ($mode !== null) {
                 continue;
             }
 
-            $stmt->execute([
+            $rows[] = [
                 $steamId,
                 (int) $game['appid'],
                 mb_substr((string) ($game['name'] ?? ''), 0, 200),
                 $playtimeForever,
                 (int) ($recentMap[$game['appid']] ?? 0),
-            ]);
+            ];
+        }
+
+        // One multi-row statement per 150 games instead of one execute per
+        // game: a 3,000-title library drops from ~3,000 round trips to ~20.
+        // 750 bound parameters stays under SQLite's 999-variable default.
+        foreach (array_chunk($rows, 150) as $chunk) {
+            $placeholders = implode(',', array_fill(0, count($chunk), '(?, ?, ?, ?, ?)'));
+
+            $stmt = $db->prepare("INSERT OR REPLACE INTO user_games (steam_id, app_id, name, playtime_forever, playtime_2weeks) VALUES {$placeholders}");
+            $stmt->execute(array_merge(...$chunk));
         }
 
         $db->commit();
