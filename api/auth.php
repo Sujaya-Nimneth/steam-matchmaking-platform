@@ -46,19 +46,13 @@ if ($mode !== null) {
     $steamId = $steamApi->validateLogin($_GET);
 
     if ($steamId === null) {
-        http_response_code(401);
-        header('Content-Type: text/plain; charset=utf-8');
-        echo 'Authentication failed.';
-        exit;
+        json_response(['error' => 'Steam authentication failed. Please try again.'], 401);
     }
 
     $summary = $steamApi->getPlayerSummary($steamId);
 
     if ($summary === null) {
-        http_response_code(502);
-        header('Content-Type: text/plain; charset=utf-8');
-        echo 'Could not load your Steam profile. Please try again.';
-        exit;
+        json_response(['error' => 'Could not load your Steam profile. Please try again.'], 502);
     }
 
     $bans = $steamApi->getPlayerBans($steamId);
@@ -113,10 +107,7 @@ if ($mode !== null) {
     } catch (Throwable $e) {
         $db->rollBack();
         error_log('Failed to sync Steam library: ' . $e->getMessage());
-        http_response_code(500);
-        header('Content-Type: text/plain; charset=utf-8');
-        echo 'Could not save your Steam library. Please try again.';
-        exit;
+        json_response(['error' => 'Could not save your Steam library. Please try again.'], 500);
     }
 
     // Rotate the session ID so a pre-login session cannot be reused.
