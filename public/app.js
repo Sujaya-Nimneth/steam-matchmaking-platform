@@ -172,7 +172,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         playstyle: document.getElementById('setup-playstyle').value,
                         age: document.getElementById('setup-age').value,
                         country: document.getElementById('setup-country').value,
-                        languages: []
+                        languages: document.getElementById('setup-languages').value
+                            .split(',')
+                            .map((language) => language.trim())
+                            .filter(Boolean)
                     })
                 });
 

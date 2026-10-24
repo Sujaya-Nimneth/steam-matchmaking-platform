@@ -70,6 +70,11 @@ require __DIR__ . '/../config/bootstrap.php';
                             <label for="setup-country">Country Code <span class="optional">(optional)</span></label>
                             <input type="text" id="setup-country" maxlength="2" placeholder="US" autocapitalize="characters" autocomplete="country">
                         </div>
+                        <div class="input-group">
+                            <label for="setup-languages">Spoken Languages <span class="optional">(optional)</span></label>
+                            <input type="text" id="setup-languages" placeholder="English, German" autocomplete="off" aria-describedby="setup-languages-hint">
+                            <small id="setup-languages-hint" class="field-hint">Comma separated. Other players can filter the deck by language.</small>
+                        </div>
                         <button type="submit" class="btn-primary">Save &amp; Start Swiping</button>
                     </form>
                 </main>
