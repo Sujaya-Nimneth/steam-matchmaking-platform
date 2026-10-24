@@ -26,11 +26,10 @@ class DB
 
                 self::$instance = $pdo;
             } catch (PDOException $e) {
-                error_log('Database connection failed: ' . $e->getMessage());
-                http_response_code(500);
-                header('Content-Type: application/json; charset=utf-8');
-                echo json_encode(['error' => 'Database unavailable']);
-                exit;
+                // Infrastructure throws; the web entry point's global error
+                // handler turns this into a JSON 500 and CLI callers can
+                // catch it themselves.
+                throw new RuntimeException('Database connection failed: ' . $e->getMessage(), 0, $e);
             }
         }
 
