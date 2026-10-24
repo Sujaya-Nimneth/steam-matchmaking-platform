@@ -15,6 +15,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         json_response(['error' => 'Profile not found'], 404);
     }
 
+    // languages is stored as a JSON array; deliver it decoded.
+    $user['languages'] = json_decode((string) ($user['languages'] ?? '[]'), true) ?: [];
+
     json_response($user);
 }
 
