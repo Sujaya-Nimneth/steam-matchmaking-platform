@@ -61,16 +61,17 @@ if ($language !== '' && mb_strlen($language) > 32) {
 // Phase 1: rank every candidate that shares at least one game by overlap
 // depth and keep the top 300. The user_games self-join is the expensive part
 // of discovery, so the shared-row hydration below is bounded to a fixed set
-// of candidates instead of the entire user base.
+// of candidates instead of the entire user base. Positional parameters only
+// — PDO cannot mix named and positional placeholders.
 $candidateSql = "
     SELECT u.steam_id
     FROM users u
     JOIN user_games g ON g.steam_id = u.steam_id
-    JOIN user_games mine ON mine.app_id = g.app_id AND mine.steam_id = :me
-    WHERE u.steam_id != :me
+    JOIN user_games mine ON mine.app_id = g.app_id AND mine.steam_id = ?
+    WHERE u.steam_id != ?
       AND u.setup_complete = 1
       AND NOT EXISTS (
-          SELECT 1 FROM swipes s WHERE s.swiper_id = :me AND s.swiped_id = u.steam_id
+          SELECT 1 FROM swipes s WHERE s.swiper_id = ? AND s.swiped_id = u.steam_id
       )
       {$filterSql}
     GROUP BY u.steam_id
@@ -79,7 +80,7 @@ $candidateSql = "
 ";
 
 $stmt = $db->prepare($candidateSql);
-$stmt->execute(array_merge([':me' => $steamId], $filters));
+$stmt->execute(array_merge([$steamId, $steamId, $steamId], $filters));
 $candidateIds = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
 $candidates = [];
@@ -87,21 +88,23 @@ $sharedByCandidate = [];
 
 if ($candidateIds !== []) {
     // Phase 2: one query returns the bounded candidates together with all
-    // of their shared rows, instead of one query per candidate.
+    // of their shared rows, instead of one query per candidate. Positional
+    // parameters only — PDO cannot mix named and positional placeholders.
     $placeholders = implode(',', array_fill(0, count($candidateIds), '?'));
+    $mePos = array_merge([$steamId], $candidateIds);
 
     $sql = "
         SELECT u.steam_id, u.name, u.avatar, u.playstyle, u.languages, u.country, u.age,
                g.app_id, g.name AS game_name, g.playtime_forever, g.playtime_2weeks
         FROM users u
         JOIN user_games g ON g.steam_id = u.steam_id
-        JOIN user_games mine ON mine.app_id = g.app_id AND mine.steam_id = :me
+        JOIN user_games mine ON mine.app_id = g.app_id AND mine.steam_id = ?
         WHERE u.steam_id IN ({$placeholders})
         ORDER BY u.steam_id
     ";
 
     $stmt = $db->prepare($sql);
-    $stmt->execute(array_merge([':me' => $steamId], $candidateIds));
+    $stmt->execute($mePos);
 
     $excluded = [];
 
