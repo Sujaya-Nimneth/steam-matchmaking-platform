@@ -13,6 +13,14 @@ $steamApi = new SteamAPI();
 $mode = $_GET['openid_mode'] ?? null;
 
 if (isset($_GET['logout'])) {
+    // Logout changes session state, so it is a POST with a same-origin
+    // check; a plain GET link could be triggered cross-site.
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        json_response(['error' => 'Method not allowed'], 405);
+    }
+
+    require_same_origin();
+
     $_SESSION = [];
     if (ini_get('session.use_cookies')) {
         $params = session_get_cookie_params();
@@ -26,8 +34,7 @@ if (isset($_GET['logout'])) {
         ]);
     }
     session_destroy();
-    header('Location: /');
-    exit;
+    json_response(['success' => true]);
 }
 
 if ($mode === 'cancel') {

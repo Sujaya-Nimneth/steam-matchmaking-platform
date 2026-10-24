@@ -91,9 +91,9 @@ start_secure_session();
                             <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-4.35-7-9a4 4 0 017-2.65A4 4 0 0119 12c0 4.65-7 9-7 9z"/></svg>
                             <span id="matches-count" class="badge hidden">0</span>
                         </button>
-                        <a href="/api/auth.php?logout=1" class="icon-btn" aria-label="Log out">
+                        <button id="btn-logout" class="icon-btn" type="button" aria-label="Log out">
                             <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
-                        </a>
+                        </button>
                     </div>
                 </header>
 

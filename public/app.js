@@ -514,6 +514,20 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btn-pass')?.addEventListener('click', () => swipeFromButton('pass'));
     document.getElementById('btn-like')?.addEventListener('click', () => swipeFromButton('like'));
 
+    // Logout is a state-changing POST; the redirect happens afterwards.
+    document.getElementById('btn-logout')?.addEventListener('click', async () => {
+        try {
+            await api('/api/auth.php?logout=1', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: '{}'
+            });
+        } catch {
+            // Clear locally even if the request failed.
+        }
+        window.location.href = '/';
+    });
+
     document.addEventListener('keydown', (event) => {
         if (dialogs.length > 0) return;
         if (!views.swipe || !views.swipe.classList.contains('active')) return;
