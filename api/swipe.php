@@ -37,21 +37,20 @@ if (!$stmt->fetch()) {
     json_response(['error' => 'Player not found'], 404);
 }
 
-// A swipe is final: ignore repeated submissions instead of letting a
-// later "pass" silently overwrite an existing "like".
+// A swipe is final. INSERT OR IGNORE keeps two concurrent first swipes
+// from crashing on the primary key, and the stored action — not whatever
+// the client re-sent — decides whether a mutual like happened.
+$stmt = $db->prepare('INSERT OR IGNORE INTO swipes (swiper_id, swiped_id, action) VALUES (?, ?, ?)');
+$stmt->execute([$steamId, $swipedId, $action]);
+
 $stmt = $db->prepare('SELECT action FROM swipes WHERE swiper_id = ? AND swiped_id = ?');
 $stmt->execute([$steamId, $swipedId]);
-$existing = $stmt->fetch();
-
-if (!$existing) {
-    $stmt = $db->prepare('INSERT INTO swipes (swiper_id, swiped_id, action) VALUES (?, ?, ?)');
-    $stmt->execute([$steamId, $swipedId, $action]);
-}
+$effectiveAction = (string) $stmt->fetchColumn();
 
 $isMatch = false;
 $matchData = null;
 
-if ($action === 'like') {
+if ($effectiveAction === 'like') {
     $stmt = $db->prepare("SELECT 1 FROM swipes WHERE swiper_id = ? AND swiped_id = ? AND action = 'like'");
     $stmt->execute([$swipedId, $steamId]);
 
