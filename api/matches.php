@@ -50,6 +50,14 @@ if ($playstyle !== '' && in_array($playstyle, PLAYSTYLES, true)) {
     $filters[] = $playstyle;
 }
 
+// The language filter is applied during hydration on the bounded candidate
+// set: languages are stored as JSON arrays, so SQL-side matching is not
+// portable across SQLite builds.
+$language = trim((string) ($_GET['language'] ?? ''));
+if ($language !== '' && mb_strlen($language) > 32) {
+    $language = '';
+}
+
 // Phase 1: rank every candidate that shares at least one game by overlap
 // depth and keep the top 300. The user_games self-join is the expensive part
 // of discovery, so the shared-row hydration below is bounded to a fixed set
@@ -83,7 +91,7 @@ if ($candidateIds !== []) {
     $placeholders = implode(',', array_fill(0, count($candidateIds), '?'));
 
     $sql = "
-        SELECT u.steam_id, u.name, u.avatar, u.playstyle, u.languages,
+        SELECT u.steam_id, u.name, u.avatar, u.playstyle, u.languages, u.country, u.age,
                g.app_id, g.name AS game_name, g.playtime_forever, g.playtime_2weeks
         FROM users u
         JOIN user_games g ON g.steam_id = u.steam_id
@@ -95,16 +103,31 @@ if ($candidateIds !== []) {
     $stmt = $db->prepare($sql);
     $stmt->execute(array_merge([':me' => $steamId], $candidateIds));
 
+    $excluded = [];
+
     while ($row = $stmt->fetch()) {
         $candidateId = $row['steam_id'];
 
+        if (isset($excluded[$candidateId])) {
+            continue;
+        }
+
         if (!isset($candidates[$candidateId])) {
+            $languages = json_decode((string) ($row['languages'] ?? '[]'), true) ?: [];
+
+            if ($language !== '' && !in_array($language, $languages, true)) {
+                $excluded[$candidateId] = true;
+                continue;
+            }
+
             $candidates[$candidateId] = [
                 'steam_id' => $row['steam_id'],
                 'name' => $row['name'],
                 'avatar' => $row['avatar'],
                 'playstyle' => $row['playstyle'],
-                'languages' => $row['languages'],
+                'languages' => $languages,
+                'country' => $row['country'],
+                'age' => $row['age'] !== null ? (int) $row['age'] : null,
             ];
         }
 
@@ -141,7 +164,9 @@ foreach ($candidates as $candidateId => $candidate) {
         'name' => $candidate['name'],
         'avatar' => $candidate['avatar'],
         'playstyle' => $candidate['playstyle'],
-        'languages' => json_decode($candidate['languages'] ?? '[]') ?: [],
+        'languages' => $candidate['languages'],
+        'country' => $candidate['country'],
+        'age' => $candidate['age'],
         'score' => $matchData['score'],
         'shared_count' => $matchData['shared_count'],
         'shared_games' => $matchData['shared_games'],
@@ -186,7 +211,7 @@ function list_matches(PDO $db, string $steamId): array
 {
     $stmt = $db->prepare("
         SELECT m.created_at,
-               u.steam_id, u.name, u.avatar, u.playstyle, u.country, u.discord_handle
+               u.steam_id, u.name, u.avatar, u.playstyle, u.country, u.languages, u.discord_handle
         FROM matches m
         JOIN users u
           ON u.steam_id = CASE WHEN m.user1_id = :me THEN m.user2_id ELSE m.user1_id END
@@ -205,6 +230,7 @@ function list_matches(PDO $db, string $steamId): array
             'avatar' => $row['avatar'],
             'playstyle' => $row['playstyle'],
             'country' => $row['country'],
+            'languages' => json_decode((string) ($row['languages'] ?? '[]'), true) ?: [],
             'discord_handle' => $row['discord_handle'],
             'matched_at' => $row['created_at'],
             'steam_profile_url' => 'https://steamcommunity.com/profiles/' . $row['steam_id'],
