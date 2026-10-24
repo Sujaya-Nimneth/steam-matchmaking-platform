@@ -6,9 +6,22 @@ declare(strict_types=1);
  */
 
 $root = dirname(__DIR__);
+
+// Isolate the suite in a throwaway database; it must never touch a
+// developer's real database.sqlite.
+$testDb = sys_get_temp_dir() . '/lfg-tests-' . getmypid() . '.sqlite';
+putenv('DB_PATH=' . $testDb);
+register_shutdown_function(static function () use ($testDb): void {
+    foreach (['', '-wal', '-shm', '-journal'] as $suffix) {
+        @unlink($testDb . $suffix);
+    }
+});
+
 require $root . '/config/db.php';
 require $root . '/services/SteamAPI.php';
 require $root . '/services/MatchEngine.php';
+
+DB::getConnection()->exec((string) file_get_contents($root . '/db/schema.sql'));
 
 $failures = 0;
 $passed = 0;
