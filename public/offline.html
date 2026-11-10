@@ -9,15 +9,14 @@
     <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-    <div id="app">
-        <div class="view active">
-            <div class="hero">
-                <div class="logo-glitch">LFG</div>
-                <h1>You're offline</h1>
-                <p>Reconnect to keep swiping. Matchmaking needs a live connection to Steam.</p>
-                <a href="/" class="btn-primary">Try again</a>
-            </div>
+    <main id="main" class="view active">
+        <div class="state is-empty">
+            <span class="wordmark" translate="no">LFG</span>
+            <div class="state-glyph" aria-hidden="true">·</div>
+            <h1>You are offline</h1>
+            <p>Reconnect to keep swiping. Matchmaking needs a live connection to Steam.</p>
+            <a href="/" class="btn btn-primary">Try again</a>
         </div>
-    </div>
+    </main>
 </body>
 </html>
