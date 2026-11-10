@@ -9,15 +9,15 @@ require __DIR__ . '/../config/bootstrap.php';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>LFG — Steam Matchmaking Platform</title>
-    <meta name="description" content="Swipe, match and play. The Steam matchmaking platform finds you gaming partners based on the games you actually play.">
-    <link rel="stylesheet" href="/style.css">
+    <meta name="description" content="Find people who play what you play. LFG ranks Steam players by shared games and playtime, then you decide.">
     <link rel="manifest" href="/manifest.json">
     <link rel="icon" href="/icons/favicon-32.png" sizes="32x32" type="image/png">
     <link rel="apple-touch-icon" href="/icons/icon-192.png">
-    <meta name="theme-color" content="#171a21">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <meta name="theme-color" content="#0b0d10">
+    <meta name="color-scheme" content="dark">
+    <link rel="preload" href="/fonts/ibm-plex-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="/design-tokens.css">
+    <link rel="stylesheet" href="/style.css">
 </head>
 <body>
     <a class="skip-link" href="#main">Skip to content</a>
