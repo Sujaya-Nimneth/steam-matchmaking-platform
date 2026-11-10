@@ -1,21 +1,39 @@
-# Steam Matchmaking Platform 🎮
+# Steam Matchmaking Platform
 
 [![CI](https://github.com/Sujaya-Nimneth/steam-matchmaking-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/Sujaya-Nimneth/steam-matchmaking-platform/actions/workflows/ci.yml)
 [![PHP](https://img.shields.io/badge/PHP-8.2%2B-8892BF.svg)](https://www.php.net/)
 [![Dependencies](https://img.shields.io/badge/dependencies-zero-brightgreen.svg)](#tech-stack)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
-Think Tinder, but for finding your gaming duo. Log in with Steam, and the
-platform ranks other players by a compatibility score computed from your real
-game libraries and playtime — then you swipe, match, and take the conversation
-to Discord. No passwords, no fake profiles: everything comes from the official
-Steam Web API.
+Find people who play what you play. Log in with Steam and LFG ranks other
+players by a compatibility score computed from your real game libraries and
+playtime, then you swipe, match, and take the conversation to Discord. No
+passwords, no fake profiles: everything comes from the official Steam Web API.
+
+The interface is built around **"The Library Ledger"**: the score is a flat SVG
+ring you can open to see the two Steam libraries that produced it, with your
+hours and theirs side by side. See [docs/brand-guidelines.md](docs/brand-guidelines.md)
+for the design system.
 
 <p align="center">
-  <img src="docs/screenshots/02-swipe-deck.png" alt="Swipe deck showing a ranked player card with an 84% compatibility ring, shared games and profile chips" width="280">
-  <img src="docs/screenshots/03-match-overlay.png" alt="Match celebration overlay revealing the Discord handle" width="280">
-  <img src="docs/screenshots/04-matches.png" alt="Matches drawer listing confirmed matches" width="280">
+  <img src="docs/screenshots/after/mobile-deck.png" alt="Swipe deck: flat card, 84% compatibility ring, you/them playtime ledger" width="240">
+  <img src="docs/screenshots/after/mobile-match.png" alt="Match celebration revealing the Discord handle" width="240">
+  <img src="docs/screenshots/after/desktop-login.png" alt="Login with a real, data-filled interface fragment beside the headline" width="360">
 </p>
+
+<details>
+<summary>More screens (tablet, desktop, filters, matches)</summary>
+
+<p align="center">
+  <img src="docs/screenshots/after/desktop-deck.png" alt="Desktop deck with the score-breakdown ledger rail" width="440">
+  <img src="docs/screenshots/after/mobile-filters.png" alt="Filters dialog" width="240">
+  <img src="docs/screenshots/after/mobile-matches.png" alt="Matches list" width="240">
+</p>
+</details>
+
+Before/after evidence at 390 / 768 / 1440 lives in
+[docs/screenshots/before](docs/screenshots/before) and
+[docs/screenshots/after](docs/screenshots/after).
 
 ## Try it in two commands
 
@@ -41,15 +59,34 @@ it in production.
   in one batched transaction.
 - **A matchmaking engine that goes deeper than shared games** — see
   [How matching works](#how-matching-works).
-- **Swiping with a real card deck** — pointer-drag with momentum, LIKE/PASS
-  stamps, keyboard arrows, incremental prefetch, and a match celebration
-  that reveals the other player's Discord handle only on a mutual like.
+- **Swiping with a real card deck** — pointer-drag, tap buttons, keyboard
+  arrows and a tap-to-open score disclosure; incremental prefetch; a quiet
+  match celebration that reveals the other player's Discord handle only on a
+  mutual like. A failed swipe rolls the card back instead of losing it.
+- **The Library Ledger** — tapping the compatibility ring shows a "Why you
+  matched" breakdown built only from real payload fields: shared games, your
+  hours, their hours, and games both played recently.
 - **Server-side filters** — playstyle, country, spoken language and a
-  "no VAC bans" toggle, all applied in SQL before scoring.
-- **Installable PWA** — offline fallback page, stale-while-revalidate asset
-  caching, maskable icons.
-- **Accessible UI** — focus-trapped dialogs, skip link, `aria-live` regions,
-  `prefers-reduced-motion` support.
+  "no VAC bans" toggle, applied in SQL before scoring. Filters, the matches
+  drawer and the match overlay are deep-linkable and Back works.
+- **Distinct states** — loading, exhausted deck, over-narrow filters, network
+  error and 429 rate-limited each have their own message and action.
+- **Installable PWA** — offline fallback, stale-while-revalidate caching,
+  versioned asset list, maskable icons.
+- **Accessible UI** — one main landmark with a working skip link,
+  focus-trapped dialogs with `inert` backgrounds, inline form validation with
+  a focusable error summary, `aria-live` status region, 44px targets,
+  `prefers-reduced-motion` support, and full keyboard parity for the swipe
+  gesture.
+
+## Design system
+
+Three layers of CSS custom properties live in
+[public/design-tokens.css](public/design-tokens.css): primitive values,
+semantic aliases, and component tokens. IBM Plex Sans is self-hosted, so the
+UI needs no external font or script; the strict CSP (`script-src 'self'`, no
+`unsafe-inline`) is preserved. No build step, no framework, no raw hex outside
+the token file. See [docs/brand-guidelines.md](docs/brand-guidelines.md).
 
 ## How matching works
 
@@ -89,18 +126,19 @@ reachable.
 ├── config/          # Bootstrap, security helpers, PDO singleton, domain constants
 ├── db/              # Schema, CLI initializer, demo data seeder
 ├── deploy/          # Apache/Nginx configs + Docker vhost and entrypoint
-├── docs/            # Screenshots
-├── public/          # Document root: SPA, router.php, service worker, PWA assets
+├── docs/            # Brand guidelines, before/after screenshots
+├── public/          # Document root: SPA, design tokens, fonts, service worker, PWA assets
 ├── services/        # Business logic: SteamAPI client, MatchEngine scoring
 └── tests/           # Unit + HTTP integration suites (php tests/run.php)
 ```
 
 ## Tech stack
 
-**PHP 8.2+ · SQLite (WAL) · vanilla JS · zero runtime dependencies.** There is
-no composer.json, no npm install and no build step — the whole application is
-~3,000 lines you can read in an afternoon, and the Docker image is plain
-`php:8.2-apache`.
+**PHP 8.2+ · SQLite (WAL) · vanilla JS · plain CSS · zero runtime
+dependencies.** There is no composer.json, no npm install and no build step —
+the whole application is ~3,000 lines you can read in an afternoon, and the
+Docker image is plain `php:8.2-apache`. The one bundled font (IBM Plex Sans,
+OFL) is served locally, so the app works with external requests blocked.
 
 ## API endpoints
 
