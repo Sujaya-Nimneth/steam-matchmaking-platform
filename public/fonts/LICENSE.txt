@@ -1,0 +1,3 @@
+IBM Plex Sans (c) IBM Corp., SIL Open Font License 1.1
+https://github.com/IBM/plex  ·  https://openfontlicense.org
+One variable latin subset (weights 400-700) is bundled locally.

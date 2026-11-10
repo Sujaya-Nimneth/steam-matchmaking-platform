@@ -1,0 +1,140 @@
+/* public/design-tokens.css
+ *
+ * Single source of truth for the LFG design system. Three layers:
+ * primitive (raw values) -> semantic (purpose) -> component (per-control).
+ * Everything downstream references a token; no raw hex in components.
+ * See docs/UI-UX-REDESIGN-PLAN.md section 5 for the rationale (local only).
+ */
+
+@font-face {
+    font-family: 'IBM Plex Sans';
+    font-style: normal;
+    font-weight: 400 700;
+    font-display: swap;
+    src: url('/fonts/ibm-plex-sans-latin.woff2') format('woff2');
+}
+
+:root {
+    color-scheme: dark;
+
+    /* ---- Layer 1: primitives ---------------------------------------- */
+    --gray-000: #000000;
+    --gray-090: #0b0d10;
+    --gray-100: #141619;
+    --gray-150: #1c1f23;
+    --gray-200: #25292e;
+    --gray-300: #3a4046;
+    --gray-700: #9499a0;
+    --gray-800: #b4b8be;
+    --gray-950: #f4f6f8;
+
+    --blue-300: #a8dcfb;
+    --blue-500: #66c0f4;
+    --blue-600: #3d9fd6;
+    --blue-tint-100: #0f2634;
+    --blue-tint-200: #123047;
+
+    --green-400: #3fc07a;
+    --green-tint: #172a1d;
+    --red-400: #e5566f;
+    --red-tint: #2c1a20;
+    --amber-400: #e8b45c;
+    --amber-tint: #2c2417;
+
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-6: 24px;
+    --space-8: 32px;
+    --space-12: 48px;
+
+    --fs-xs: 12px;
+    --fs-sm: 14px;
+    --fs-base: 16px;
+    --fs-lg: 20px;
+    --fs-xl: 28px;
+
+    --radius-card: 16px;
+    --radius-control: 8px;
+    --radius-chip: 999px;
+
+    --dur-fast: 150ms;
+    --dur-base: 220ms;
+    --dur-slow: 320ms;
+    --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+
+    --font-sans: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --font-num: 'IBM Plex Sans', system-ui, sans-serif;
+
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-left: env(safe-area-inset-left, 0px);
+    --safe-right: env(safe-area-inset-right, 0px);
+
+    /* ---- Layer 2: semantic ------------------------------------------ */
+    --ground: var(--gray-090);
+    --surface: var(--gray-100);
+    --raised: var(--gray-150);
+    --active: var(--gray-200);
+    --border: var(--gray-200);
+    --rule: var(--gray-150);
+    --control-border: var(--gray-300);
+
+    --text: var(--gray-950);
+    --muted: var(--gray-800);
+    --faint: var(--gray-700);
+
+    /* One accent family only: Steam blue. It goes on data and one action. */
+    --accent: var(--blue-500);
+    --accent-hover: var(--blue-600);
+    --accent-soft: var(--blue-tint-100);
+    --accent-track: var(--blue-tint-200);
+    --on-accent: var(--gray-000);
+    --focus: var(--blue-300);
+
+    --positive: var(--green-400);
+    --positive-bg: var(--green-tint);
+    --negative: var(--red-400);
+    --negative-bg: var(--red-tint);
+    --notice: var(--amber-400);
+    --notice-bg: var(--amber-tint);
+
+    --spacing-component: var(--space-4);
+    --spacing-section: var(--space-8);
+    --gap: var(--space-4);
+
+    /* ---- Layer 3: component ----------------------------------------- */
+    --button-bg: var(--accent);
+    --button-fg: var(--on-accent);
+    --button-hover-bg: var(--accent-hover);
+    --button-radius: var(--radius-control);
+    --button-min: 44px;
+    --button-gap: var(--space-2);
+
+    --input-bg: var(--raised);
+    --input-border: var(--control-border);
+    --input-focus: var(--focus);
+    --input-height: 44px;
+
+    --card-bg: var(--surface);
+    --card-radius: var(--radius-card);
+    --card-pad: var(--space-6);
+
+    --ring-track: var(--accent-track);
+    --ring-fill: var(--accent);
+
+    --toast-info-bg: var(--raised);
+    --toast-success-bg: var(--positive-bg);
+    --toast-error-bg: var(--negative-bg);
+
+    --shell-height: 56px;
+    --deck-max: 420px;
+}
+
+/* Numbers are data: they must not jitter when the value changes. */
+.num,
+[data-num] {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum' 1;
+}

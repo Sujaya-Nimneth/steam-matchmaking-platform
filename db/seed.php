@@ -105,27 +105,32 @@ $names = [
     'GigaGus',
 ];
 
-$palette = ['#66c0f4', '#a4d007', '#ff4c4c', '#e0a03a', '#9b6df3', '#3fd2a5', '#f06292', '#7986cb'];
+// Flat two-tone identity avatars: a dark ground plus one pale tint of the
+// player's own hue. The tint is identity, not data, so it stays low-area.
+$hues = ['#123047', '#172a1d', '#2c1a20', '#2c2417', '#1d2740', '#172b2b', '#2a1f33', '#1e2733'];
+$inks = ['#a8dcfb', '#3fc07a', '#e5566f', '#e8b45c', '#9fb4e8', '#6fc0a8', '#c79bd6', '#93b7c9'];
 
 $avatarDir = $root . '/public/avatars';
 if (!is_dir($avatarDir)) {
     mkdir($avatarDir, 0755, true);
 }
 
-/** Write a gradient avatar with the player's initials and return its web path. */
-$makeAvatar = static function (string $steamId, string $name) use ($avatarDir, $palette): string {
-    $color = $palette[crc32($steamId) % count($palette)];
+/** Write a flat monogram avatar and return its web path. */
+$makeAvatar = static function (string $steamId, string $name) use ($avatarDir, $hues, $inks): string {
+    $i = crc32($steamId) % count($hues);
+    $ground = $hues[$i];
+    $ink = $inks[$i];
     $initials = strtoupper(mb_substr(preg_replace('/[^A-Za-z0-9]/', '', $name) ?: 'P', 0, 2));
 
     $svg = sprintf(
         '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">'
-        . '<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">'
-        . '<stop offset="0" stop-color="%s"/><stop offset="1" stop-color="#171a21"/>'
-        . '</linearGradient></defs>'
-        . '<rect width="200" height="200" fill="url(#g)"/>'
-        . '<text x="100" y="128" font-family="Arial, Helvetica, sans-serif" font-size="72" font-weight="800" fill="#ffffff" text-anchor="middle">%s</text>'
+        . '<rect width="200" height="200" fill="%s"/>'
+        . '<circle cx="100" cy="78" r="58" fill="%s" opacity="0.14"/>'
+        . '<text x="100" y="120" font-family="IBM Plex Sans, Arial, Helvetica, sans-serif" font-size="68" font-weight="700" fill="%s" text-anchor="middle">%s</text>'
         . '</svg>',
-        $color,
+        $ground,
+        $ink,
+        $ink,
         htmlspecialchars($initials, ENT_XML1)
     );
 

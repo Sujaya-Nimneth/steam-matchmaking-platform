@@ -1,13 +1,17 @@
 // public/sw.js
-const CACHE_NAME = 'lfg-static-v2';
+const CACHE_NAME = 'lfg-static-v3';
 const STATIC_ASSETS = [
     '/style.css',
+    '/design-tokens.css',
+    '/fonts/ibm-plex-sans-latin.woff2',
     '/app.js',
     '/sw-register.js',
     '/manifest.json',
     '/offline.html',
     '/icons/icon-192.png',
-    '/icons/icon-512.png'
+    '/icons/icon-512.png',
+    '/icons/icon-maskable-512.png',
+    '/icons/favicon-32.png'
 ];
 
 self.addEventListener('install', (event) => {

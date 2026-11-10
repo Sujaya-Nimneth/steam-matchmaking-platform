@@ -188,9 +188,32 @@ test('serves the SPA shell', function () use ($http) {
     assert_true(str_contains($body, 'Steam Matchmaking Platform'), 'shell should carry the app title');
 });
 
+test('shell has one main landmark and a working skip link', function () use ($http, $cookieAlice) {
+    $shells = [
+        'guest' => $http('GET', '/'),
+        'signed-in' => $http('GET', '/', null, [], $cookieAlice),
+    ];
+    foreach ($shells as $label => $response) {
+        $body = $response[1];
+        assert_same(1, substr_count($body, '<main'), "{$label}: exactly one main landmark on every shell");
+        assert_true(str_contains($body, 'href="#main"'), "{$label}: skip link must be present");
+        assert_true(str_contains($body, 'id="main"'), "{$label}: skip link must have a real target");
+    }
+});
+
+test('shell ships design tokens and no CSP-breaking inline code', function () use ($http) {
+    [, $body] = $http('GET', '/');
+    assert_true(str_contains($body, '/design-tokens.css'), 'token stylesheet must be linked');
+    assert_same(0, preg_match_all('/\son[a-z]+\s*=/i', $body), 'no inline event handlers (CSP)');
+    assert_same(0, preg_match_all('/<script(?![^>]*\bsrc=)/i', $body), 'no inline scripts (CSP)');
+    assert_same(0, preg_match_all('/\sstyle\s*=\s*"/i', $body), 'no inline style attributes (CSP)');
+});
+
 test('serves static assets through the router', function () use ($http) {
     [$status] = $http('GET', '/style.css');
     assert_same(200, $status);
+    [$tokensStatus] = $http('GET', '/design-tokens.css');
+    assert_same(200, $tokensStatus);
 });
 
 test('renders unknown pages as the SPA', function () use ($http) {

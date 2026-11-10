@@ -1,0 +1,112 @@
+# LFG Brand Guidelines
+
+**Product**: Steam Matchmaking Platform (LFG)
+**Direction**: "The Library Ledger"
+**Version**: 1.0 · 2026-11-10
+**Source of truth**: [public/design-tokens.css](../public/design-tokens.css)
+
+## 1. Positioning
+
+LFG finds people who play what you play. It ranks Steam players by shared games
+and playtime, then you decide. It is a working screen, not a marketing page.
+
+**One thing the design must always do**: make the compatibility score feel like
+evidence, not decoration. The "Why you matched" ledger is the product's face.
+
+**Voice**: plain, active, specific. Sentence case. Errors state the fix. No
+hype, no invented proof, no "unlock", "seamless" or "next-gen". Copy names what
+a control does ("Apply filters", "Copy Discord handle") and keeps the same word
+from button to result ("Copied").
+
+## 2. Colour
+
+One ground, one ink, one accent. Colour goes on **data**, never on chrome.
+
+| Role | Token | Value |
+|---|---|---|
+| Ground | `--ground` | `#0b0d10` |
+| Surface | `--surface` | `#141619` |
+| Raised | `--raised` | `#1c1f23` |
+| Border | `--border` | `#25292e` |
+| Text | `--text` | `#f4f6f8` |
+| Secondary text | `--muted` | `#b4b8be` |
+| Tertiary / placeholder | `--faint` | `#9499a0` |
+| Accent (Steam blue) | `--accent` | `#66c0f4` |
+| Accent soft / track | `--accent-soft` / `--accent-track` | `#0f2634` / `#123047` |
+| Positive | `--positive` | `#3fc07a` |
+| Negative | `--negative` | `#e5566f` |
+| Notice | `--notice` | `#e8b45c` |
+
+- **Never** add a second accent family. Status colours appear only on tinted
+  pills, never as a full-area fill.
+- Every text tier must reach **4.5:1** on the surface it sits on, placeholders
+  included. Two greys only, far enough apart to read as two.
+- No gradients, no glows, no shadows on things at rest. Surfaces separate by
+  one tone step. A real floating dialog is the only exception.
+- `color-scheme: dark` is set on `<html>`; `theme-color` matches `--ground` in
+  `index.php`, `manifest.json` and `offline.html`.
+
+## 3. Typography
+
+**IBM Plex Sans**, self-hosted as one variable latin subset
+(`public/fonts/ibm-plex-sans-latin.woff2`, SIL OFL 1.1). Weights 400–700,
+500 for body, 700 for headings. No second family.
+
+| Step | Token | Size | Use |
+|---|---|---|---|
+| xs | `--fs-xs` | 12px | captions, hints, chips |
+| sm | `--fs-sm` | 14px | secondary copy, list rows |
+| base | `--fs-base` | 16px | body |
+| lg | `--fs-lg` | 20px | card titles, section headings |
+| xl | `--fs-xl` | 28px | app title (h1 ≤ 32px desktop) |
+
+- Headlines: two lines or fewer at every width, `text-wrap: balance`,
+  tracking `-0.01em`, leading 1.15.
+- Body: leading 1.55, measure under 80 characters.
+- `font-variant-numeric: tabular-nums` on every number (`.num` / `[data-num]`).
+- Use `…` not `...`; curly quotes; loading strings end with `…`.
+
+## 4. Space, radius, motion
+
+- 4px base: 4 / 8 / 12 / 16 / 24 / 32 / 48. One `--gap: 16px`.
+- Equal outer margins: 16px phone, 32px desktop. Safe-area insets on all four
+  sides.
+- Radius: `--radius-card: 16px`, `--radius-control: 8px`, chips fully round.
+- Motion: transform + opacity only; 150 / 220 / 320ms; `prefers-reduced-motion`
+  keeps content and drops travel. One signature move (the score ring drawing
+  to its value), one staggered entrance, feedback on every control.
+
+## 5. Components
+
+| Component | Rule |
+|---|---|
+| Buttons | Flat fill, 44px minimum, one primary per screen, `:focus-visible` 2px ring at 3:1 |
+| Score ring | Inline SVG, stroke driven by `--score`, solid ground disc, accessible name, opens the ledger |
+| Chips | Neutral filled, sentence case, no tracked uppercase |
+| Dialogs | Bottom sheet on phone, centred on desktop; `inert` background, focus trap/restore, `overscroll-behavior: contain` |
+| Toasts | info / success / error variants; never red for a success |
+| States | loading, empty (exhausted / over-filtered), error, rate-limited — each distinct, each with a fix and one action |
+| Avatars | Flat two-tone monogram; the tint is identity, not data |
+
+## 6. Non-negotiables
+
+1. **No raw hex outside `design-tokens.css`.**
+2. **No build step, no framework, no external JS.** The CSP is
+   `script-src 'self'` with no `unsafe-inline`; every asset lives under
+   `public/` and is served by `public/router.php`.
+3. **No inline `style=""` or event handlers.** Custom properties are set via
+   CSSOM (which the CSP permits).
+4. **Keyboard parity.** Drag, buttons, arrow keys and the score disclosure all
+   work with no pointer.
+5. **Discord handles appear only after a mutual like.** Never in the discovery
+   deck.
+6. **Any new static asset must be added to `sw.js` `STATIC_ASSETS` and the
+   cache name bumped.**
+
+## 7. Assets
+
+- `public/icons/` — four PWA icons, dark ground, blue `LFG` monogram.
+  `icon-maskable-512.png` keeps the mark inside the central safe zone.
+- `public/fonts/` — IBM Plex Sans variable latin subset + OFL notice.
+- `public/avatars/` — generated by `db/seed.php`; gitignored, flat two-tone.
+- `docs/screenshots/` — before/after evidence at 390 / 768 / 1440.

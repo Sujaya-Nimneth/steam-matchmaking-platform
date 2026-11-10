@@ -28,11 +28,22 @@ DEMO_MODE=1 php -S localhost:8000 -t public public/router.php
 ## Before you open a pull request
 
 - `php tests/run.php` must pass. The suite includes HTTP integration tests
-  that spawn the built-in server, so it needs no external services.
+  that spawn the built-in server, so it needs no external services. It also
+  asserts the shell has one `<main>`, a working skip link, linked design
+  tokens and no CSP-breaking inline code.
 - `php -l` and `node --check public/*.js` must be clean (CI runs both).
 - No new runtime dependencies (composer packages, npm packages, CDNs) without
   opening an issue first — zero dependencies is a core property of this
   project.
+- **UI work**: keep raw colours, spacing, radii and type sizes in
+  `public/design-tokens.css` only; components reference tokens via `var()`.
+  Don't add gradients, glows, shadows at rest, a second accent family, inline
+  `style=""` attributes or inline event handlers — the CSP is
+  `script-src 'self'` with no `unsafe-inline` (CSSOM writes such as
+  `element.style.setProperty()` are fine).
+- **Any new static asset** under `public/` must also be added to
+  `STATIC_ASSETS` in `public/sw.js` and the `CACHE_NAME` bumped, or the PWA
+  will serve a mixed old/new shell offline.
 - Security-sensitive changes must come with tests. The suite has coverage for
   same-origin enforcement, input validation, rate limiting and the router's
   private-directory blocks; extend it rather than trusting manual checks.
