@@ -180,9 +180,9 @@ require __DIR__ . '/../config/bootstrap.php';
                     <h1 id="match-title">You matched</h1>
                     <p>You and <span id="match-name"></span> both liked each other.</p>
                     <div class="match-avatars">
-                        <img id="my-avatar" src="" alt="Your avatar" width="88" height="88">
+                        <img id="my-avatar" src="" alt="Your avatar" width="72" height="72">
                         <div class="match-link" aria-hidden="true"></div>
-                        <img id="match-avatar" src="" alt="Their avatar" width="88" height="88">
+                        <img id="match-avatar" src="" alt="Their avatar" width="72" height="72">
                     </div>
                     <div class="match-contact">
                         <h2>Connect on Discord</h2>

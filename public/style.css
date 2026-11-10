@@ -455,16 +455,22 @@ main#main { min-height: 100dvh; }
 .matches-empty { color: var(--muted); text-align: center; padding: var(--space-8) 0; font-size: var(--fs-sm); }
 
 /* Match celebration */
-.match-content { text-align: center; max-width: 440px; width: 100%; }
-.match-content h1 { font-size: var(--fs-xl); line-height: 1.2; margin-bottom: var(--space-2); }
+.match-content {
+    text-align: center; max-width: 440px; width: 100%;
+    max-height: calc(100dvh - var(--space-8));
+    overflow-y: auto; overscroll-behavior: contain;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--card-radius); padding: var(--card-pad);
+}
+.match-content h1 { font-size: var(--fs-lg); line-height: 1.25; margin-bottom: var(--space-2); }
 .match-content > p { color: var(--muted); font-size: var(--fs-sm); margin-bottom: var(--space-8); }
-.match-avatars { display: flex; align-items: center; justify-content: center; gap: var(--space-4); margin-bottom: var(--space-8); }
-.match-avatars img { width: 88px; height: 88px; border-radius: 50%; object-fit: cover; background: var(--raised); }
+.match-avatars { display: flex; align-items: center; justify-content: center; gap: var(--space-4); margin: var(--space-6) 0; }
+.match-avatars img { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; background: var(--raised); }
 .match-link { width: 28px; height: 2px; background: var(--accent); }
 .match-contact {
-    background: var(--raised); padding: var(--space-6);
-    border-radius: var(--radius-control); margin-bottom: var(--space-6);
-    display: flex; flex-direction: column; gap: var(--space-3);
+    background: var(--raised); padding: var(--space-4);
+    border-radius: var(--radius-control); margin-bottom: var(--space-4);
+    display: flex; flex-direction: column; gap: var(--space-2);
 }
 .match-contact h2 { font-size: var(--fs-sm); color: var(--muted); font-weight: 500; margin: 0; }
 .discord-box {
